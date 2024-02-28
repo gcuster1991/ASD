@@ -1,0 +1,228 @@
+---
+title: "Sequence Pre-processing"
+author: "Joe x Gordon"
+date: "2023-01-09"
+output: html_document
+---
+
+- Use sequences only after CutAdapt
+
+- https://benjjneb.github.io/dada2/tutorial.html
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+##Install dada2 
+Use sequences only after CutaDAPT! 
+```{#r package installation, echo=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("dada2", version = "3.16")
+BiocManager::install("phyloseq")
+BiocManager::install("Biostrings")
+```
+
+## Load libraries - dada2
+```{r dada2&version, echo = FALSE}
+library(dada2); packageVersion("dada2")
+library(phyloseq)
+library(Biostrings); packageVersion("Biostrings")
+library(ggplot2); packageVersion("ggplot2")
+```
+
+#set path to directory containing ASD_Tom folder
+```{r}
+#path <- "~/test_ASD_Tom"
+path <- "~/ASD_Tom"
+list.files(path)
+```
+
+#fastq Forward and reverse filenames have format: SAMPLENAME_R1_001.fastq and SAMPLENAME_R2_001.fastq
+```{r}
+fnFs <- sort(list.files(path, pattern="_R1_001.fastq", full.names = TRUE))
+fnRs <- sort(list.files(path, pattern="_R2_001.fastq", full.names = TRUE))
+```
+
+#Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
+#Inspect read quality profiles & DECIDE truncating length
+#Filter & trim. Place filtered files in filtered/ subdirectory
+```{r}
+sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
+
+plotQualityProfile(fnFs[5]) #visualize quality profiles of the forward reads.Pick randomly any nO 1-5 to view graph
+
+plotQualityProfile(fnRs[5]) #visualize the quality profiles of the reverse reads
+
+filtFs <- file.path(path, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
+filtRs <- file.path(path, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
+
+names(filtFs) <- sample.names
+names(filtRs) <- sample.names
+```
+
+#Trim truncate the forward reads at position 220 (trimming the last 10 nucleotides)
+#Truncate the reverse reads at position 175 where the quality distribution crashes.
+```{r}
+#nOTE:the values of truncLen are derived from the plotQuailityProfile
+#truncLen = truncate reads after truncLen bases. Reads shorter than this are discarded
+
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(220,175),
+                     maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
+                     compress=TRUE, multithread=FALSE) # On Windows set multithread=FALSE
+
+#to calculate % of reads kept from object out. check class(out) and export to csv
+
+# Convert the matrix/array to a data frame
+out_df <- as.data.frame(out)
+
+# Calculate the total sum of reads.in
+total_reads_in <- sum(out_df$reads.in)
+total_reads_in #8471185
+
+# Calculate the total sum of reads.out
+total_reads_out <- sum(out_df$reads.out)
+total_reads_out #7221444
+
+mean<- mean(out_df$reads.out)
+mean #31126.91
+```
+
+#Check length of fastq forward and reverse reads
+```{r}
+length(fnFs)
+length(fnRs)
+
+head(out) #~80% of reads kept
+```
+
+#DADA2 algorithm learning the error rates + Visualize estimate error rates
+```{r}
+errF <- learnErrors(filtFs, multithread=TRUE)
+errR <- learnErrors(filtRs, multithread=TRUE)
+
+plotErrors(errF, nominalQ=TRUE)
+```
+
+#Apply core sample algorithm on the filtered and trimmed sequence data  
+```{r}
+dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
+dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
+```
+
+#Inspect dada2-class object:
+```{r}
+dadaFs[[1]] #true sequence variants inferred from the unique sequences
+## 519 sequence variants were inferred from 25075 input unique sequences
+dadaRs[[1]]
+```
+
+#Merge paired reads
+```{r}
+mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
+# Inspect the merger data.frame from the first sample
+head(mergers[[1]])
+```
+
+#Construct squence table + Inspect distribution of sequence lengths
+```{r}
+
+seqtab <- makeSequenceTable(mergers)
+dim(seqtab)
+
+table(nchar(getSequences(seqtab)))
+```
+
+#Remove chimeras
+```{r}
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+dim(seqtab.nochim)
+
+sum(seqtab.nochim)/sum(seqtab)
+```
+
+
+#Final check of progress, look at number of reads that made it through each step in the pipeline
+```{r}
+getN <- function(x) sum(getUniques(x))
+track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, getN), rowSums(seqtab.nochim))
+#If processing a single sample, remove sapply calls:e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
+
+colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track) <- sample.names
+head(track)
+```
+
+#Assign taxonomy
+```{r}
+taxa <- assignTaxonomy(seqtab.nochim, "~/tax/silva_nr_v132_train_set.fa.gz", multithread=TRUE)
+
+#species level assignments based on exact matching between ASVs and sequenced reference strains
+taxa <- addSpecies(taxa, "~/tax/silva_species_assignment_v132.fa.gz")
+
+#inspect taxonomy assignment
+taxa.print <- taxa # Removing sequence rownames for display only
+rownames(taxa.print) <- NULL
+head(taxa.print)
+```
+
+#Construct a simple sample data.frame from the information encoded in the filenames
+```{r}
+##convert list sample.names to dataframe. Always CSV!!
+samples.out <- rownames(seqtab.nochim)
+
+(samples.out)
+
+df<- as.data.frame(sample.names) #convert sample names to df
+#write.csv(df,"C:/Users/jgo5103/Documents//MetaRaw.csv", row.names = FALSE) #turn df to csv file. crosscheck and split to variables
+
+
+
+#samdf <- read.csv("ASD_MetaMoreCol.csv") #change MetaRaw to ASD_meta csv file having variables. Variables must be spelt correctly
+
+samdf <- read.csv("ASD_MetaLatest.csv")
+
+class(samdf) #check if class = dataframe
+
+(samdf)
+
+#Final check of dataframe xture and levels
+str(samdf)
+
+samdf$Timepoint <- as.factor(samdf$Timepoint)
+samdf$Plot <- as.factor(samdf$Plot)
+samdf$Treatment <- as.factor(samdf$Treatment)
+samdf$Covercrop <- as.factor(samdf$Covercrop)
+samdf$WheatM <- as.factor (samdf$WheatM)
+
+levels(samdf$Timepoint)
+levels(samdf$Treatment)
+levels(samdf$Covercrop)
+
+rownames(samdf) <- samples.out
+samples.out
+```
+
+#Construct a phyloseq object directly from the dada2 outputs
+```{r}
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
+               sample_data(samdf), 
+               tax_table(taxa))
+
+dna <- Biostrings::DNAStringSet(taxa_names(ps))
+names(dna) <- taxa_names(ps)
+ps <- merge_phyloseq(ps, dna)
+taxa_names(ps) <- paste0("ASV", seq(ntaxa(ps)))
+ps #Phyloseq Ready!!
+
+#SAVE phyloseq object as rds file in folder
+saveRDS(ps, file= "psMeta.RDS")
+
+#View taxaTable of phyloseq object
+ps@tax_table
+sum(sample_sums(ps)) #4121897 total sequences of ps
+rank_names(ps) #check rank names
+```
+

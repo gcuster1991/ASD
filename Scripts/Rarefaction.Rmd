@@ -1,0 +1,32 @@
+---
+title: "Preprocesing to create rarefied otu table and phylsoeq object"
+output: html_notebook
+---
+
+load packages
+```{r}
+library(phyloseq)
+```
+
+
+read in raw otu table
+```{r}
+ps_orig_16S<-readRDS("../Data/psMeta.RDS")
+```
+
+
+filter non-bacterial reads
+```{r}
+
+```
+
+rarefy
+```{r}
+
+```
+
+save output for downstream use
+```{r}
+
+```
+
