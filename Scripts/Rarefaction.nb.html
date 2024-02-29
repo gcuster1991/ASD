@@ -1756,35 +1756,160 @@ and phylsoeq object</h1>
 <p>load packages</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuICByZXF1aXJlKEVjb2xVdGlscylcblxuYGBgIn0= -->
+<pre class="r"><code>  require(EcolUtils)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiTG9hZGluZyByZXF1aXJlZCBwYWNrYWdlOiBFY29sVXRpbHNcbiJ9 -->
+<pre><code>Loading required package: EcolUtils</code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>read in raw otu table</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHNfb3JpZ18xNlM8LXJlYWRSRFMoXCIuLi9EYXRhL3BzTWV0YS5SRFNcIilcblxuYGBgIn0= -->
-<pre class="r"><code>ps_orig_16S&lt;-readRDS(&quot;../Data/psMeta.RDS&quot;)
-</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHNfb3JpZ18xNlM8LXJlYWRSRFMoXCIuLi9EYXRhL3BzTWV0YS5SRFNcIilcbmBgYCJ9 -->
+<pre class="r"><code>ps_orig_16S&lt;-readRDS(&quot;../Data/psMeta.RDS&quot;)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>filter non-bacterial reads</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI3JlbW92ZSBjaGxvcm9wbGFzdFxuIyAzMTMgY2hsb3JvcGxhc3Qgb3IgbWl0b2Nob25kcmlhbCB0YXhhXG5wczE2U19vcmlnX25jPC1zdWJzZXRfdGF4YShwc19vcmlnXzE2UywgRmFtaWx5IT0gXCJNaXRvY2hvbmRyaWFcIiB8IGlzLm5hKEZhbWlseSkpXG5wczE2U19vcmlnX25jPC1zdWJzZXRfdGF4YShwczE2U19vcmlnX25jLCBPcmRlciE9XCJDaGxvcm9wbGFzdFwiIHwgaXMubmEoT3JkZXIpKVxuXG5cbiMxMSw0ODIgYmFjdGVyaWFsIHRheGFcbnBzMTZTX2JhYzwtc3Vic2V0X3RheGEocHMxNlNfb3JpZ19uYywgS2luZ2RvbSA9PSBcIkJhY3RlcmlhXCIpXG4jMTA3IGFyY2hhZWFcbnBzMTZTX2FyY2g8LXN1YnNldF90YXhhKHBzMTZTX29yaWdfbmMsIEtpbmdkb20gPT0gXCJBcmNoYWVhXCIpXG5gYGAifQ== -->
+<pre class="r"><code>#remove chloroplast
+# 313 chloroplast or mitochondrial taxa
+ps16S_orig_nc&lt;-subset_taxa(ps_orig_16S, Family!= &quot;Mitochondria&quot; | is.na(Family))
+ps16S_orig_nc&lt;-subset_taxa(ps16S_orig_nc, Order!=&quot;Chloroplast&quot; | is.na(Order))
+
+
+#11,482 bacterial taxa
+ps16S_bac&lt;-subset_taxa(ps16S_orig_nc, Kingdom == &quot;Bacteria&quot;)
+#107 archaea
+ps16S_arch&lt;-subset_taxa(ps16S_orig_nc, Kingdom == &quot;Archaea&quot;)</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>rarefy</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2V0LnNlZWQoMTEpXG5zb3J0KHNhbXBsZV9zdW1zKHBzMTZTX2JhYykpXG5zdW1tYXJ5KHNhbXBsZV9zdW1zKHBzMTZTX2JhYykpXG5zZChzYW1wbGVfc3VtcyhwczE2U19iYWMpKVxuYGBgIn0= -->
+<pre class="r"><code>set.seed(11)
+sort(sample_sums(ps16S_bac))
+summary(sample_sums(ps16S_bac))
+sd(sample_sums(ps16S_bac))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2FtcGxlX3N1bXMocHMxNlNfYmFjX3JhcmVmeV9pdGVyKVxuXG5gYGAifQ== -->
+<pre class="r"><code>sample_sums(ps16S_bac_rarefy_iter)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICBhc2QtdDAtMTAxLWZhbGxvdyAgIGFzZC10MC0xMDItdHJpdGljYWxlICAgICAgYXNkLXQwLTEwMy1jbG92ZXIgICAgICAgYXNkLXQwLTEwNC0yc3BwYiAgICAgICBhc2QtdDAtMjAxLTJzcHBiIFxuICAgICAgICAgICAgICAgICAgNzk4NyAgICAgICAgICAgICAgICAgICA4MDAyICAgICAgICAgICAgICAgICAgIDgwMDMgICAgICAgICAgICAgICAgICAgNzk5MiAgICAgICAgICAgICAgICAgICA0ODM3IFxuICAgICBhc2QtdDAtMjAyLWZhbGxvdyAgIGFzZC10MC0yMDMtdHJpdGljYWxlICAgICAgYXNkLXQwLTIwNC1jbG92ZXIgICAgICBhc2QtdDAtMzAxLWZhbGxvdyAgIGFzZC10MC0zMDItdHJpdGljYWxlIFxuICAgICAgICAgICAgICAgICAgNzk5OSAgICAgICAgICAgICAgICAgICA4MDAyICAgICAgICAgICAgICAgICAgIDgwMDQgICAgICAgICAgICAgICAgICAgNzk5OCAgICAgICAgICAgICAgICAgICA3OTk4IFxuICAgICBhc2QtdDAtMzAzLWNsb3ZlciAgICAgICBhc2QtdDAtMzA0LTJzcHBiICAgIGFzZC10MC00MDEtdHJpdGNhbGUgICAgICAgYXNkLXQwLTQwMi0yc3BwYiAgICAgIGFzZC10MC00MDMtY2xvdmVyIFxuICAgICAgICAgICAgICAgICAgNzk5OCAgICAgICAgICAgICAgICAgICA3OTg4ICAgICAgICAgICAgICAgICAgIDc5OTIgICAgICAgICAgICAgICAgICAgNzk5NSAgICAgICAgICAgICAgICAgICA3OTk2IFxuICAgICBhc2QtdDAtNDA0LWZhbGxvdyAgICAgICAgYXNkLXQxLWEtMTAxLWZ3ICAgICAgICBhc2QtdDEtYS0xMDItdHIgICAgICAgIGFzZC10MS1hLTEwMy1jYyAgICAgYXNkLXQxLWEtMTA0LTJzcHBiIFxuICAgICAgICAgICAgICAgICAgODAxMCAgICAgICAgICAgICAgICAgICA4MDAzICAgICAgICAgICAgICAgICAgIDgwMDggICAgICAgICAgICAgICAgICAgODAwMiAgICAgICAgICAgICAgICAgICA3OTk4IFxuICAgICAgYXNkLXQxLWEtMTA1LWFzZCAgICAgICAgYXNkLXQxLWEtMTA2LXRyICAgICAgICBhc2QtdDEtYS0xMDctY2MgICAgIGFzZC10MS1hLTEwOC0yc3BwYiAgICAgICAgYXNkLXQxLWEtMjAxYXNkIFxuICAgICAgICAgICAgICAgICAgNzk5OSAgICAgICAgICAgICAgICAgICA3OTk3ICAgICAgICAgICAgICAgICAgIDc5OTkgICAgICAgICAgICAgICAgICAgNzk5NyAgICAgICAgICAgICAgICAgICA3OTk3IFxuICAgICAgYXNkLXQxLWEtMjAyLWFzZCAgICAgICAgYXNkLXQxLWEtMjAzLXRyICAgICAgICBhc2QtdDEtYS0yMDQtY2MgICAgIGFzZC10MS1hLTIwNS0yc3BwYiAgICAgICAgYXNkLXQxLWEtMjA2LWZ3IFxuICAgICAgICAgICAgICAgICAgNzk5OCAgICAgICAgICAgICAgICAgICA3OTkxICAgICAgICAgICAgICAgICAgIDc5OTUgICAgICAgICAgICAgICAgICAgNzk5MSAgICAgICAgICAgICAgICAgICA3OTkwIFxuICAgICAgYXNkLXQxLWEtMjA3LWFzZCAgICAgICAgYXNkLXQxLWEtMjA4LWNjICAgICAgIGFzZC10MS1hLTMwMS1hc2QgICAgICAgIGFzZC10MS1hLTMwMi10ciAgICAgICAgYXNkLXQxLWEtMzAzLWNjIFxuICAgICAgICAgICAgICAgICAgNzk5NCAgICAgICAgICAgICAgICAgICA3OTk4ICAgICAgICAgICAgICAgICAgIDgwMDggICAgICAgICAgICAgICAgICAgODAwOSAgICAgICAgICAgICAgICAgICA4MDAxIFxuICAgIGFzZC10MS1hLTMwNC0yc3BwYiAgICBhc2QtdDEtYS0zMDUtZnBsdXN3ICAgIGFzZC10MS1hLTMwNi10ci1hc2QgICAgICAgIGFzZC10MS1hLTMwNy1jYyAgICAgYXNkLXQxLWEtMzA4LTJzcHBiIFxuICAgICAgICAgICAgICAgICAgODAxMCAgICAgICAgICAgICAgICAgICA4MDAyICAgICAgICAgICAgICAgICAgIDgwMDAgICAgICAgICAgICAgICAgICAgODAxMCAgICAgICAgICAgICAgICAgICA4MDAzIFxuICAgYXNkLXQxLWEtNDAxLXRyLWFzZCBhc2QtdDEtYS00MDItMnNwcGItYXNkICAgICAgICBhc2QtdDEtYS00MDMtY2MgICAgYXNkLXQxLWEtNDA0LWZwbHVzdyAgICAgICAgYXNkLXQxLWEtNDA1LXRyIFxuICAgICAgICAgICAgICAgICAgNzMxNyAgICAgICAgICAgICAgICAgICA3OTk5ICAgICAgICAgICAgICAgICAgIDgwMDIgICAgICAgICAgICAgICAgICAgODAxMiAgICAgICAgICAgICAgICAgICA4MDA1IFxuICAgIGFzZC10MS1hLTQwNi0yc3BwYiAgICBhc2QtdDEtYS00MDctY2MtYXNkICAgICAgYXNkLXQxLWEtNDA4LWFzZGkgICAgICAgYXNkLXQxLWEtNTAxLXV0YyAgICAgICBhc2QtdDEtYS01MDItdXRjIFxuICAgICAgICAgICAgICAgICAgODAwMyAgICAgICAgICAgICAgICAgICA3OTk0ICAgICAgICAgICAgICAgICAgIDc5OTkgICAgICAgICAgICAgICAgICAgODAwNSAgICAgICAgICAgICAgICAgICA3OTk3IFxuICAgICAgYXNkLXQxLWEtNTAzLXV0YyAgICAgICBhc2QtdDEtYS01MDQtdXRjICAgIGFzZC10Mi1hLTEwMS1mcGx1c3cgICAgYXNkLXQyLWEtMTAyLXRyLWFzZCAgICBhc2QtdDItYS0xMDMtY2MtYXNkIFxuICAgICAgICAgICAgICAgICAgODAwNyAgICAgICAgICAgICAgICAgICA4MDA1ICAgICAgICAgICAgICAgICAgIDgwMDIgICAgICAgICAgICAgICAgICAgODAwMyAgICAgICAgICAgICAgICAgICA4MDA0IFxuICAgIGFzZC10Mi1hLTEwNC0yc3BwYiAgICAgIGFzZC10Mi1hLTEwNS1hc2RpICAgICAgICBhc2QtdDItYS0xMDYtdHIgICAgICAgIGFzZC10Mi1hLTEwNy1jYyAgICAgYXNkLXQyLWEtMTA4LTJzcHBiIFxuICAgICAgICAgICAgICAgICAgNzk5NyAgICAgICAgICAgICAgICAgICA4MDEzICAgICAgICAgICAgICAgICAgIDc5ODggICAgICAgICAgICAgICAgICAgNzk5OSAgICAgICAgICAgICAgICAgICA4MDAzIFxuYXNkLXQyLWEtMjAxLTJzcHBiLWFzZCAgICAgIGFzZC10Mi1hLTIwMi1hc2RpICAgICAgICBhc2QtdDItYS0yMDMtdHIgICAgICAgIGFzZC10Mi1hLTIwNC1jYyAgICAgYXNkLXQyLWEtMjA1LTJzcHBiIFxuICAgICAgICAgICAgICAgICAgNzk5MiAgICAgICAgICAgICAgICAgICA4MDA4ICAgICAgICAgICAgICAgICAgIDgwMTIgICAgICAgICAgICAgICAgICAgODAwMiAgICAgICAgICAgICAgICAgICA3OTkxIFxuICAgYXNkLXQyLWEtMjA2LWZwbHVzdyAgICBhc2QtdDItYS0yMDctdHItYXNkICAgIGFzZC10Mi1hLTIwOC1jYy1hc2QgICAgICBhc2QtdDItYS0zMDEtYXNkaSAgICAgICAgYXNkLXQyLWEtMzAyLXRyIFxuICAgICAgICAgICAgICAgICAgODAwMCAgICAgICAgICAgICAgICAgICA4MDEzICAgICAgICAgICAgICAgICAgIDc5OTkgICAgICAgICAgICAgICAgICAgODAxMSAgICAgICAgICAgICAgICAgICA4MDA1IFxuICAgYXNkLXQyLWEtMzAzLWNjLWFzZCAgICAgYXNkLXQyLWEtMzA0LTJzcHBiICAgIGFzZC10Mi1hLTMwNS1mcGx1c3cgICAgYXNkLXQyLWEtMzA2LXRyLWFzZCAgICAgICAgYXNkLXQyLWEtMzA3LWNjIFxuICAgICAgICAgICAgICAgICAgNzk5NiAgICAgICAgICAgICAgICAgICA4MDA3ICAgICAgICAgICAgICAgICAgIDc5OTkgICAgICAgICAgICAgICAgICAgNzk5NCAgICAgICAgICAgICAgICAgICA3OTk3IFxuICAgIGFzZC10Mi1hLTMwOC0yc3BwYiAgICBhc2QtdDItYS00MDEtdHItYXNkIGFzZC10Mi1hLTQwMi0yc3BwYi1hc2QgICAgICAgIGFzZC10Mi1hLTQwMy1jYyAgICBhc2QtdDItYS00MDQtZnBsdXN3IFxuICAgICAgICAgICAgICAgICAgODAwMiAgICAgICAgICAgICAgICAgICA4MDA2ICAgICAgICAgICAgICAgICAgIDc5OTkgICAgICAgICAgICAgICAgICAgODAwMiAgICAgICAgICAgICAgICAgICA3OTk5IFxuICAgICAgIGFzZC10Mi1hLTQwNS10ciAgICAgYXNkLXQyLWEtNDA2LTJzcHBiICAgIGFzZC10Mi1hLTQwNy1jYy1hc2QgICAgICBhc2QtdDItYS00MDgtYXNkaSAgICAgICBhc2QtdDItYS01MDEtdXRjIFxuICAgICAgICAgICAgICAgICAgNzk4MSAgICAgICAgICAgICAgICAgICA4MDEwICAgICAgICAgICAgICAgICAgIDc5OTggICAgICAgICAgICAgICAgICAgODAwMCAgICAgICAgICAgICAgICAgICA4MDA2IFxuICAgICAgYXNkLXQyLWEtNTAyLXV0YyAgICAgICBhc2QtdDItYS01MDMtdXRjICAgICAgIGFzZC10Mi1hLTUwNC11dGMgICAgYXNkLXQzLWEtMTAxLWZwbHVzdyAgICAgICAgYXNkLXQzLWEtMTAyLXRyIFxuICAgICAgICAgICAgICAgICAgODAwOSAgICAgICAgICAgICAgICAgICA4MDAxICAgICAgICAgICAgICAgICAgIDc5OTggICAgICAgICAgICAgICAgICAgODAwMiAgICAgICAgICAgICAgICAgICA3OTk3IFxuICAgICAgIGFzZC10My1hLTEwMy1jYyAgICAgYXNkLXQzLWEtMTA0LTJzcHBCICAgICAgIGFzZC10My1hLTEwNS1hc2QgICAgICAgIGFzZC10My1hLTEwNi10ciAgICAgICAgYXNkLXQzLWEtMTA3LWNjIFxuICAgICAgICAgICAgICAgICAgNzk5OCAgICAgICAgICAgICAgICAgICA4MDAxICAgICAgICAgICAgICAgICAgIDgwMDMgICAgICAgICAgICAgICAgICAgNzk5OSAgICAgICAgICAgICAgICAgICA3OTk0IFxuICAgIGFzZC10My1hLTEwOC0yc3BwYiAgICAgYXNkLXQzLWEtMjAxLTJzcHBiICAgICAgIGFzZC10My1hLTIwMi1hc2QgICAgICAgIGFzZC10My1hLTIwMy10ciAgICAgICAgYXNkLXQzLWEtMjA0LWNjIFxuICAgICAgICAgICAgICAgICAgODAwNiAgICAgICAgICAgICAgICAgICA4MDA1ICAgICAgICAgICAgICAgICAgIDgwMDcgICAgICAgICAgICAgICAgICAgODAwNCAgICAgICAgICAgICAgICAgICA3OTkwIFxuICAgIGFzZC10My1hLTIwNS0yc3BwYiAgICBhc2QtdDMtYS0yMDYtZnBsdXN3ICAgICAgICBhc2QtdDMtYS0yMDctdHIgICAgICAgIGFzZC10My1hLTIwOC1jYyAgICAgICBhc2QtdDMtYS0zMDEtYXNkIFxuICAgICAgICAgICAgICAgICAgODAwMiAgICAgICAgICAgICAgICAgICA4MDAwICAgICAgICAgICAgICAgICAgIDc5OTIgICAgICAgICAgICAgICAgICAgODAwMyAgICAgICAgICAgICAgICAgICA3OTkzIFxuICAgICAgIGFzZC10My1hLTMwMi10ciAgICAgICAgYXNkLXQzLWEtMzAzLWNjICAgICBhc2QtdDMtYS0zMDQtMnNwcGIgICAgYXNkLXQzLWEtMzA1LWZwbHVzdyAgICAgICAgYXNkLXQzLWEtMzA2LXRyIFxuICAgICAgICAgICAgICAgICAgNzk5NyAgICAgICAgICAgICAgICAgICA4MDAxICAgICAgICAgICAgICAgICAgIDc5OTcgICAgICAgICAgICAgICAgICAgODAwOCAgICAgICAgICAgICAgICAgICA3OTkyIFxuICAgICAgIGFzZC10My1hLTMwNy1jYyAgICAgYXNkLXQzLWEtMzA4LTJzcHBiICAgIGFzZC10My1hLTQwMS10ci1hc2QgYXNkLXQzLWEtNDAyLTJzcHBiLWFzZCAgICAgICAgYXNkLXQzLWEtNDAzLWNjIFxuICAgICAgICAgICAgICAgICAgODAwMCAgICAgICAgICAgICAgICAgICA4MDAzICAgICAgICAgICAgICAgICAgIDc5OTYgICAgICAgICAgICAgICAgICAgODAwMSAgICAgICAgICAgICAgICAgICA4MDA0IFxuICAgYXNkLXQzLWEtNDA0LWZwbHVzdyAgICAgICAgYXNkLXQzLWEtNDA1LXRyICAgICBhc2QtdDMtYS00MDYtMnNwcGIgICAgYXNkLXQzLWEtNDA3LWNjLWFzZCAgICAgIGFzZC10My1hLTQwOC1hc2RpIFxuICAgICAgICAgICAgICAgICAgNzk5NiAgICAgICAgICAgICAgICAgICA4MDA2ICAgICAgICAgICAgICAgICAgIDgwMDUgICAgICAgICAgICAgICAgICAgNzk5NyAgICAgICAgICAgICAgICAgICA3OTk5IFxuICAgICAgYXNkLXQzLWEtNTAxLXV0YyAgICAgICBhc2QtdDMtYS01MDItdXRjICAgICAgIGFzZC10My1hLTUwMy11dGMgICAgICAgYXNkLXQzLWEtNTA0LXV0YyAgICBhc2QtdDQtYS0xMDEtZnBsdXN3IFxuICAgICAgICAgICAgICAgICAgODAwNSAgICAgICAgICAgICAgICAgICA4MDEzICAgICAgICAgICAgICAgICAgIDgwMDkgICAgICAgICAgICAgICAgICAgNzk5NCAgICAgICAgICAgICAgICAgICA4MDAzIFxuICAgYXNkLXQ0LWEtMTAyLXRyLWFzZCAgICBhc2QtdDQtYS0xMDMtY2MtYXNkIGFzZC10NC1hLTEwNC0yNXBwQi1hc2QgICAgICBhc2QtdDQtYS0xMDUtYXNkMSAgICAgICAgYXNkLXQ0LWEtMTA2LXRyIFxuICAgICAgICAgICAgICAgICAgODAwMyAgICAgICAgICAgICAgICAgICA4MDA3ICAgICAgICAgICAgICAgICAgIDgwMDMgICAgICAgICAgICAgICAgICAgNzk4OSAgICAgICAgICAgICAgICAgICA3OTk0IFxuICAgICAgIGFzZC10NC1hLTEwNy1jYyAgICAgYXNkLXQ0LWEtMTA4LTI1cHBCIGFzZC10NC1hLTIwMS0yNXBwQi1hc2QgICAgICBhc2QtdDQtYS0yMDItYXNkMSAgICAgICAgYXNkLXQ0LWEtMjAzLXRyIFxuICAgICAgICAgICAgICAgICAgNzk4NyAgICAgICAgICAgICAgICAgICA4MDA2ICAgICAgICAgICAgICAgICAgIDc5OTYgICAgICAgICAgICAgICAgICAgNzk5MyAgICAgICAgICAgICAgICAgICA4MDA1IFxuICAgICAgIGFzZC10NC1hLTIwNC1jYyAgICAgYXNkLXQ0LWEtMjA1LTI1cHBCICAgIGFzZC10NC1hLTIwNi1mcGx1c3cgICAgYXNkLXQ0LWEtMjA3LXRyLWFzZCAgICBhc2QtdDQtYS0yMDgtY2MtYXNkIFxuICAgICAgICAgICAgICAgICAgNzk5OSAgICAgICAgICAgICAgICAgICA3OTkzICAgICAgICAgICAgICAgICAgIDc5OTggICAgICAgICAgICAgICAgICAgNzk5NSAgICAgICAgICAgICAgICAgICA4MDAwIFxuICAgICBhc2QtdDQtYS0zMDEtYXNkMSAgICAgICAgYXNkLXQ0LWEtMzAyLXRyICAgIGFzZC10NC1hLTMwMy1jYy1hc2QgICAgIGFzZC10NC1hLTMwNC0yNXBwQiAgICBhc2QtdDQtYS0zMDUtZnBsdXN3IFxuICAgICAgICAgICAgICAgICAgODAwMiAgICAgICAgICAgICAgICAgICA3OTkxICAgICAgICAgICAgICAgICAgIDc5OTUgICAgICAgICAgICAgICAgICAgNzk5OSAgICAgICAgICAgICAgICAgICA4MDA3IFxuICAgYXNkLXQ0LWEtMzA2LXRyLWFzZCAgICAgICAgYXNkLXQ0LWEtMzA3LWNjIGFzZC10NC1hLTMwOC0yNXBwQi1hc2QgICAgYXNkLXQ0LWEtNDAxLXRyLWFzZCBhc2QtdDQtYS00MDItczJwcGItYXNkIFxuICAgICAgICAgICAgICAgICAgNzk5MSAgICAgICAgICAgICAgICAgICA3OTk2ICAgICAgICAgICAgICAgICAgIDc5OTcgICAgICAgICAgICAgICAgICAgNzk5NSAgICAgICAgICAgICAgICAgICA3OTg4IFxuICAgICAgIGFzZC10NC1hLTQwMy1jYyAgICBhc2QtdDQtYS00MDQtZnBsdXN3ICAgICAgICBhc2QtdDQtYS00MDUtdHIgICAgIGFzZC10NC1hLTQwNi0yc3BwYiAgICBhc2QtdDQtYS00MDctY2MtYXNkIFxuICAgICAgICAgICAgICAgICAgNzk5OCAgICAgICAgICAgICAgICAgICA3OTk3ICAgICAgICAgICAgICAgICAgIDc5OTIgICAgICAgICAgICAgICAgICAgNzk5OSAgICAgICAgICAgICAgICAgICA4MDAzIFxuICAgICBhc2QtdDQtYS00MDgtYXNkMSAgICAgICBhc2QtdDQtYS01MDEtdXRjICAgICAgIGFzZC10NC1hLTUwMi11dGMgICAgICAgYXNkLXQ0LWEtNTAzLXV0YyAgICAgICBhc2QtdDQtYS01MDQtdXRjIFxuICAgICAgICAgICAgICAgICAgNzk5OSAgICAgICAgICAgICAgICAgICA4MDAzICAgICAgICAgICAgICAgICAgIDgwMTEgICAgICAgICAgICAgICAgICAgNzk5OCAgICAgICAgICAgICAgICAgICA3OTkwIFxuICAgICAgIGFzZC10NS1hLTEwMS1mdyAgICAgICAgYXNkLXQ1LWEtMTAyLXRyICAgICAgICBhc2QtdDUtYS0xMDMtY2MgICAgIGFzZC10NS1hLTEwNC0yc3BwYiAgICAgICBhc2QtdDUtYS0xMDUtYXNkIFxuICAgICAgICAgICAgICAgICAgNzk5OCAgICAgICAgICAgICAgICAgICA4MDAxICAgICAgICAgICAgICAgICAgIDgwMDcgICAgICAgICAgICAgICAgICAgODAwNyAgICAgICAgICAgICAgICAgICA4MDAwIFxuICAgICAgIGFzZC10NS1hLTEwNi10ciAgICAgICAgYXNkLXQ1LWEtMTA3LWNjICAgICBhc2QtdDUtYS0xMDgtMnNwcGIgICAgIGFzZC10NS1hLTIwMS0yc3BwYiAgICAgICBhc2QtdDUtYS0yMDItYXNkIFxuICAgICAgICAgICAgICAgICAgNzk5MyAgICAgICAgICAgICAgICAgICA3OTk5ICAgICAgICAgICAgICAgICAgIDgwMDMgICAgICAgICAgICAgICAgICAgODAwNSAgICAgICAgICAgICAgICAgICA3OTkxIFxuICAgICAgIGFzZC10NS1hLTIwMy10ciAgICAgICAgYXNkLXQ1LWEtMjA0LWNjICAgICBhc2QtdDUtYS0yMDUtMnNwcGIgICAgICAgIGFzZC10NS1hLTIwNi1mdyAgICAgICAgYXNkLXQ1LWEtMjA3LXRyIFxuICAgICAgICAgICAgICAgICAgNzk5NCAgICAgICAgICAgICAgICAgICA4MDAwICAgICAgICAgICAgICAgICAgIDgwMDcgICAgICAgICAgICAgICAgICAgNzk5NCAgICAgICAgICAgICAgICAgICA3OTg2IFxuICAgICAgIGFzZC10NS1hLTIwOC1jYyAgICAgICBhc2QtdDUtYS0zMDEtYXNkICAgICAgICBhc2QtdDUtYS0zMDItdHIgICAgICAgIGFzZC10NS1hLTMwMy1jYyAgICAgYXNkLXQ1LWEtMzA0LTJzcHBiIFxuICAgICAgICAgICAgICAgICAgODAwMyAgICAgICAgICAgICAgICAgICA4MDAyICAgICAgICAgICAgICAgICAgIDc5OTcgICAgICAgICAgICAgICAgICAgODAwNSAgICAgICAgICAgICAgICAgICA3OTkzIFxuICAgICAgIGFzZC10NS1hLTMwNS1mdyAgICAgICAgYXNkLXQ1LWEtMzA2LXRyICAgICAgICBhc2QtdDUtYS0zMDctY2MgICAgIGFzZC10NS1hLTMwOC0yc3BwYiAgICAgICAgYXNkLXQ1LWEtNDAxLXRyIFxuICAgICAgICAgICAgICAgICAgNzk5NSAgICAgICAgICAgICAgICAgICA3OTk3ICAgICAgICAgICAgICAgICAgIDgwMDcgICAgICAgICAgICAgICAgICAgODAwMiAgICAgICAgICAgICAgICAgICA4MDAxIFxuICAgIGFzZC10NS1hLTQwMi0yc3BwYiAgICAgICAgYXNkLXQ1LWEtNDAzLWNjICAgIGFzZC10NS1hLTQwNC1mcGx1c3cgICAgICAgIGFzZC10NS1hLTQwNS10ciAgICAgYXNkLXQ1LWEtNDA2LTJzcHBiIFxuICAgICAgICAgICAgICAgICAgNzk5OSAgICAgICAgICAgICAgICAgICA3OTk2ICAgICAgICAgICAgICAgICAgIDc5OTIgICAgICAgICAgICAgICAgICAgODAwNCAgICAgICAgICAgICAgICAgICA4MDA0IFxuICAgICAgIGFzZC10NS1hLTQwNy1jYyAgICAgICBhc2QtdDUtYS00MDgtYXNkICAgICAgIGFzZC10NS1hLTUwMS11dGMgICAgICAgYXNkLXQ1LWEtNTAyLXV0YyAgICAgICBhc2QtdDUtYS01MDMtdXRjIFxuICAgICAgICAgICAgICAgICAgODAwNSAgICAgICAgICAgICAgICAgICA3OTk4ICAgICAgICAgICAgICAgICAgIDgwMTAgICAgICAgICAgICAgICAgICAgODAwNSAgICAgICAgICAgICAgICAgICA3OTg5IFxuICAgICAgYXNkLXQ1LWEtNTA0LXV0YyAgICBhc2QtdDctYS0xMDEtZnBsdXN3ICAgIGFzZC10Ny1hLTEwMi10ci1hc2QgICAgYXNkLXQ3LWEtMTAzLWNjLWFzZCBhc2QtdDctYS0xMDQtMnNwcGItYXNkIFxuICAgICAgICAgICAgICAgICAgNzk5NyAgICAgICAgICAgICAgICAgICA4MDA0ICAgICAgICAgICAgICAgICAgIDgwMDQgICAgICAgICAgICAgICAgICAgODAwMiAgICAgICAgICAgICAgICAgICA3OTkyIFxuICAgICBhc2QtdDctYS0xMDUtYXNkaSAgICAgICAgYXNkLXQ3LWEtMTA2LXRyICAgICAgICBhc2QtdDctYS0xMDctY2MgICAgIGFzZC10Ny1hLTEwOC0yc3BwYiBhc2QtdDctYS0yMDEtMnNwcGItYXNkIFxuICAgICAgICAgICAgICAgICAgNzk5OSAgICAgICAgICAgICAgICAgICA4MDA1ICAgICAgICAgICAgICAgICAgIDc5OTAgICAgICAgICAgICAgICAgICAgODAwNSAgICAgICAgICAgICAgICAgICA3OTk4IFxuICAgICBhc2QtdDctYS0yMDItYXNkaSAgICAgICAgYXNkLXQ3LWEtMjAzLXRyICAgICAgICBhc2QtdDctYS0yMDQtY2MgICAgIGFzZC10Ny1hLTIwNS0yc3BwYiAgICBhc2QtdDctYS0yMDYtZnBsdXN3IFxuICAgICAgICAgICAgICAgICAgODAxMSAgICAgICAgICAgICAgICAgICA3OTkzICAgICAgICAgICAgICAgICAgIDgwMDQgICAgICAgICAgICAgICAgICAgODAxNSAgICAgICAgICAgICAgICAgICA3OTk4IFxuICAgYXNkLXQ3LWEtMjA3LXRyLWFzZCAgICBhc2QtdDctYS0yMDgtY2MtYXNkICAgICAgYXNkLXQ3LWEtMzAxLWFzZGkgICAgICAgIGFzZC10Ny1hLTMwMi10ciAgICBhc2QtdDctYS0zMDMtY2MtYXNkIFxuICAgICAgICAgICAgICAgICAgODAwMCAgICAgICAgICAgICAgICAgICA4MDAxICAgICAgICAgICAgICAgICAgIDgwMDUgICAgICAgICAgICAgICAgICAgNzk5OSAgICAgICAgICAgICAgICAgICA3OTk4IFxuICAgIGFzZC10Ny1hLTMwNC0yc3BwYiAgICBhc2QtdDctYS0zMDUtZnBsdXN3ICAgIGFzZC10Ny1hLTMwNi10ci1hc2QgICAgICAgIGFzZC10Ny1hLTMwNy1jYyBhc2QtdDctYS0zMDgtMnNwcGItYXNkIFxuICAgICAgICAgICAgICAgICAgNzk5MiAgICAgICAgICAgICAgICAgICA4MDAzICAgICAgICAgICAgICAgICAgIDgwMDUgICAgICAgICAgICAgICAgICAgODAwMCAgICAgICAgICAgICAgICAgICA3OTkzIFxuICAgYXNkLXQ3LWEtNDAxLXRyLWFzZCBhc2QtdDctYS00MDItMnNwcGItYXNkICAgICAgICBhc2QtdDctYS00MDMtY2MgICAgYXNkLXQ3LWEtNDA0LWZwbHVzdyAgICAgICAgYXNkLXQ3LWEtNDA1LXRyIFxuICAgICAgICAgICAgICAgICAgODAwMyAgICAgICAgICAgICAgICAgICA4MDA3ICAgICAgICAgICAgICAgICAgIDc5OTMgICAgICAgICAgICAgICAgICAgODAwOCAgICAgICAgICAgICAgICAgICA3OTk3IFxuICAgIGFzZC10Ny1hLTQwNi0yc3BwYiAgICBhc2QtdDctYS00MDctY2MtYXNkICAgICAgYXNkLXQ3LWEtNDA4LWFzZGkgICAgICAgYXNkLXQ3LWEtNTAxLXV0YyAgICAgICBhc2QtdDctYS01MDItdXRjIFxuICAgICAgICAgICAgICAgICAgNzk5OCAgICAgICAgICAgICAgICAgICA3OTk2ICAgICAgICAgICAgICAgICAgIDgwMDMgICAgICAgICAgICAgICAgICAgNzk5NSAgICAgICAgICAgICAgICAgICA3OTk1IFxuICAgICAgYXNkLXQ3LWEtNTAzLXV0YyAgICAgICBhc2QtdDctYS01MDQtdXRjIFxuICAgICAgICAgICAgICAgICAgODAwMSAgICAgICAgICAgICAgICAgICA3OTk1IFxuIn0= -->
+<pre><code>     asd-t0-101-fallow   asd-t0-102-triticale      asd-t0-103-clover       asd-t0-104-2sppb       asd-t0-201-2sppb 
+                  7987                   8002                   8003                   7992                   4837 
+     asd-t0-202-fallow   asd-t0-203-triticale      asd-t0-204-clover      asd-t0-301-fallow   asd-t0-302-triticale 
+                  7999                   8002                   8004                   7998                   7998 
+     asd-t0-303-clover       asd-t0-304-2sppb    asd-t0-401-tritcale       asd-t0-402-2sppb      asd-t0-403-clover 
+                  7998                   7988                   7992                   7995                   7996 
+     asd-t0-404-fallow        asd-t1-a-101-fw        asd-t1-a-102-tr        asd-t1-a-103-cc     asd-t1-a-104-2sppb 
+                  8010                   8003                   8008                   8002                   7998 
+      asd-t1-a-105-asd        asd-t1-a-106-tr        asd-t1-a-107-cc     asd-t1-a-108-2sppb        asd-t1-a-201asd 
+                  7999                   7997                   7999                   7997                   7997 
+      asd-t1-a-202-asd        asd-t1-a-203-tr        asd-t1-a-204-cc     asd-t1-a-205-2sppb        asd-t1-a-206-fw 
+                  7998                   7991                   7995                   7991                   7990 
+      asd-t1-a-207-asd        asd-t1-a-208-cc       asd-t1-a-301-asd        asd-t1-a-302-tr        asd-t1-a-303-cc 
+                  7994                   7998                   8008                   8009                   8001 
+    asd-t1-a-304-2sppb    asd-t1-a-305-fplusw    asd-t1-a-306-tr-asd        asd-t1-a-307-cc     asd-t1-a-308-2sppb 
+                  8010                   8002                   8000                   8010                   8003 
+   asd-t1-a-401-tr-asd asd-t1-a-402-2sppb-asd        asd-t1-a-403-cc    asd-t1-a-404-fplusw        asd-t1-a-405-tr 
+                  7317                   7999                   8002                   8012                   8005 
+    asd-t1-a-406-2sppb    asd-t1-a-407-cc-asd      asd-t1-a-408-asdi       asd-t1-a-501-utc       asd-t1-a-502-utc 
+                  8003                   7994                   7999                   8005                   7997 
+      asd-t1-a-503-utc       asd-t1-a-504-utc    asd-t2-a-101-fplusw    asd-t2-a-102-tr-asd    asd-t2-a-103-cc-asd 
+                  8007                   8005                   8002                   8003                   8004 
+    asd-t2-a-104-2sppb      asd-t2-a-105-asdi        asd-t2-a-106-tr        asd-t2-a-107-cc     asd-t2-a-108-2sppb 
+                  7997                   8013                   7988                   7999                   8003 
+asd-t2-a-201-2sppb-asd      asd-t2-a-202-asdi        asd-t2-a-203-tr        asd-t2-a-204-cc     asd-t2-a-205-2sppb 
+                  7992                   8008                   8012                   8002                   7991 
+   asd-t2-a-206-fplusw    asd-t2-a-207-tr-asd    asd-t2-a-208-cc-asd      asd-t2-a-301-asdi        asd-t2-a-302-tr 
+                  8000                   8013                   7999                   8011                   8005 
+   asd-t2-a-303-cc-asd     asd-t2-a-304-2sppb    asd-t2-a-305-fplusw    asd-t2-a-306-tr-asd        asd-t2-a-307-cc 
+                  7996                   8007                   7999                   7994                   7997 
+    asd-t2-a-308-2sppb    asd-t2-a-401-tr-asd asd-t2-a-402-2sppb-asd        asd-t2-a-403-cc    asd-t2-a-404-fplusw 
+                  8002                   8006                   7999                   8002                   7999 
+       asd-t2-a-405-tr     asd-t2-a-406-2sppb    asd-t2-a-407-cc-asd      asd-t2-a-408-asdi       asd-t2-a-501-utc 
+                  7981                   8010                   7998                   8000                   8006 
+      asd-t2-a-502-utc       asd-t2-a-503-utc       asd-t2-a-504-utc    asd-t3-a-101-fplusw        asd-t3-a-102-tr 
+                  8009                   8001                   7998                   8002                   7997 
+       asd-t3-a-103-cc     asd-t3-a-104-2sppB       asd-t3-a-105-asd        asd-t3-a-106-tr        asd-t3-a-107-cc 
+                  7998                   8001                   8003                   7999                   7994 
+    asd-t3-a-108-2sppb     asd-t3-a-201-2sppb       asd-t3-a-202-asd        asd-t3-a-203-tr        asd-t3-a-204-cc 
+                  8006                   8005                   8007                   8004                   7990 
+    asd-t3-a-205-2sppb    asd-t3-a-206-fplusw        asd-t3-a-207-tr        asd-t3-a-208-cc       asd-t3-a-301-asd 
+                  8002                   8000                   7992                   8003                   7993 
+       asd-t3-a-302-tr        asd-t3-a-303-cc     asd-t3-a-304-2sppb    asd-t3-a-305-fplusw        asd-t3-a-306-tr 
+                  7997                   8001                   7997                   8008                   7992 
+       asd-t3-a-307-cc     asd-t3-a-308-2sppb    asd-t3-a-401-tr-asd asd-t3-a-402-2sppb-asd        asd-t3-a-403-cc 
+                  8000                   8003                   7996                   8001                   8004 
+   asd-t3-a-404-fplusw        asd-t3-a-405-tr     asd-t3-a-406-2sppb    asd-t3-a-407-cc-asd      asd-t3-a-408-asdi 
+                  7996                   8006                   8005                   7997                   7999 
+      asd-t3-a-501-utc       asd-t3-a-502-utc       asd-t3-a-503-utc       asd-t3-a-504-utc    asd-t4-a-101-fplusw 
+                  8005                   8013                   8009                   7994                   8003 
+   asd-t4-a-102-tr-asd    asd-t4-a-103-cc-asd asd-t4-a-104-25ppB-asd      asd-t4-a-105-asd1        asd-t4-a-106-tr 
+                  8003                   8007                   8003                   7989                   7994 
+       asd-t4-a-107-cc     asd-t4-a-108-25ppB asd-t4-a-201-25ppB-asd      asd-t4-a-202-asd1        asd-t4-a-203-tr 
+                  7987                   8006                   7996                   7993                   8005 
+       asd-t4-a-204-cc     asd-t4-a-205-25ppB    asd-t4-a-206-fplusw    asd-t4-a-207-tr-asd    asd-t4-a-208-cc-asd 
+                  7999                   7993                   7998                   7995                   8000 
+     asd-t4-a-301-asd1        asd-t4-a-302-tr    asd-t4-a-303-cc-asd     asd-t4-a-304-25ppB    asd-t4-a-305-fplusw 
+                  8002                   7991                   7995                   7999                   8007 
+   asd-t4-a-306-tr-asd        asd-t4-a-307-cc asd-t4-a-308-25ppB-asd    asd-t4-a-401-tr-asd asd-t4-a-402-s2ppb-asd 
+                  7991                   7996                   7997                   7995                   7988 
+       asd-t4-a-403-cc    asd-t4-a-404-fplusw        asd-t4-a-405-tr     asd-t4-a-406-2sppb    asd-t4-a-407-cc-asd 
+                  7998                   7997                   7992                   7999                   8003 
+     asd-t4-a-408-asd1       asd-t4-a-501-utc       asd-t4-a-502-utc       asd-t4-a-503-utc       asd-t4-a-504-utc 
+                  7999                   8003                   8011                   7998                   7990 
+       asd-t5-a-101-fw        asd-t5-a-102-tr        asd-t5-a-103-cc     asd-t5-a-104-2sppb       asd-t5-a-105-asd 
+                  7998                   8001                   8007                   8007                   8000 
+       asd-t5-a-106-tr        asd-t5-a-107-cc     asd-t5-a-108-2sppb     asd-t5-a-201-2sppb       asd-t5-a-202-asd 
+                  7993                   7999                   8003                   8005                   7991 
+       asd-t5-a-203-tr        asd-t5-a-204-cc     asd-t5-a-205-2sppb        asd-t5-a-206-fw        asd-t5-a-207-tr 
+                  7994                   8000                   8007                   7994                   7986 
+       asd-t5-a-208-cc       asd-t5-a-301-asd        asd-t5-a-302-tr        asd-t5-a-303-cc     asd-t5-a-304-2sppb 
+                  8003                   8002                   7997                   8005                   7993 
+       asd-t5-a-305-fw        asd-t5-a-306-tr        asd-t5-a-307-cc     asd-t5-a-308-2sppb        asd-t5-a-401-tr 
+                  7995                   7997                   8007                   8002                   8001 
+    asd-t5-a-402-2sppb        asd-t5-a-403-cc    asd-t5-a-404-fplusw        asd-t5-a-405-tr     asd-t5-a-406-2sppb 
+                  7999                   7996                   7992                   8004                   8004 
+       asd-t5-a-407-cc       asd-t5-a-408-asd       asd-t5-a-501-utc       asd-t5-a-502-utc       asd-t5-a-503-utc 
+                  8005                   7998                   8010                   8005                   7989 
+      asd-t5-a-504-utc    asd-t7-a-101-fplusw    asd-t7-a-102-tr-asd    asd-t7-a-103-cc-asd asd-t7-a-104-2sppb-asd 
+                  7997                   8004                   8004                   8002                   7992 
+     asd-t7-a-105-asdi        asd-t7-a-106-tr        asd-t7-a-107-cc     asd-t7-a-108-2sppb asd-t7-a-201-2sppb-asd 
+                  7999                   8005                   7990                   8005                   7998 
+     asd-t7-a-202-asdi        asd-t7-a-203-tr        asd-t7-a-204-cc     asd-t7-a-205-2sppb    asd-t7-a-206-fplusw 
+                  8011                   7993                   8004                   8015                   7998 
+   asd-t7-a-207-tr-asd    asd-t7-a-208-cc-asd      asd-t7-a-301-asdi        asd-t7-a-302-tr    asd-t7-a-303-cc-asd 
+                  8000                   8001                   8005                   7999                   7998 
+    asd-t7-a-304-2sppb    asd-t7-a-305-fplusw    asd-t7-a-306-tr-asd        asd-t7-a-307-cc asd-t7-a-308-2sppb-asd 
+                  7992                   8003                   8005                   8000                   7993 
+   asd-t7-a-401-tr-asd asd-t7-a-402-2sppb-asd        asd-t7-a-403-cc    asd-t7-a-404-fplusw        asd-t7-a-405-tr 
+                  8003                   8007                   7993                   8008                   7997 
+    asd-t7-a-406-2sppb    asd-t7-a-407-cc-asd      asd-t7-a-408-asdi       asd-t7-a-501-utc       asd-t7-a-502-utc 
+                  7998                   7996                   8003                   7995                   7995 
+      asd-t7-a-503-utc       asd-t7-a-504-utc 
+                  8001                   7995 </code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>save output for downstream use</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
+<pre id="r"><code>save.image(&quot;~/Desktop/Git_projects/ASD/Data/ps_bac_rarefy_iter.RData&quot;)</code></pre>
 <!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiUHJlcHJvY2VzaW5nIHRvIGNyZWF0ZSByYXJlZmllZCBvdHUgdGFibGUgYW5kIHBoeWxzb2VxIG9iamVjdCIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKbG9hZCBwYWNrYWdlcwpgYGB7cn0KbGlicmFyeShwaHlsb3NlcSkKYGBgCgoKcmVhZCBpbiByYXcgb3R1IHRhYmxlCmBgYHtyfQpwc19vcmlnXzE2UzwtcmVhZFJEUygiLi4vRGF0YS9wc01ldGEuUkRTIikKYGBgCgoKZmlsdGVyIG5vbi1iYWN0ZXJpYWwgcmVhZHMKYGBge3J9CgpgYGAKCnJhcmVmeQpgYGB7cn0KCmBgYAoKc2F2ZSBvdXRwdXQgZm9yIGRvd25zdHJlYW0gdXNlCmBgYHtyfQoKYGBgCgo=</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiUHJlcHJvY2VzaW5nIHRvIGNyZWF0ZSByYXJlZmllZCBvdHUgdGFibGUgYW5kIHBoeWxzb2VxIG9iamVjdCIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKbG9hZCBwYWNrYWdlcwpgYGB7cn0KcmVxdWlyZSh0aWR5dmVyc2UpCiAgcmVxdWlyZShwaHlsb3NlcSkKcmVxdWlyZShnZ3Bsb3QyKQogIHJlcXVpcmUoRWNvbFV0aWxzKQpgYGAKCgpyZWFkIGluIHJhdyBvdHUgdGFibGUKYGBge3J9CnBzX29yaWdfMTZTPC1yZWFkUkRTKCIuLi9EYXRhL3BzTWV0YS5SRFMiKQpgYGAKZmlsdGVyIG5vbi1iYWN0ZXJpYWwgcmVhZHMKYGBge3J9CiNyZW1vdmUgY2hsb3JvcGxhc3QKIyAzMTMgY2hsb3JvcGxhc3Qgb3IgbWl0b2Nob25kcmlhbCB0YXhhCnBzMTZTX29yaWdfbmM8LXN1YnNldF90YXhhKHBzX29yaWdfMTZTLCBGYW1pbHkhPSAiTWl0b2Nob25kcmlhIiB8IGlzLm5hKEZhbWlseSkpCnBzMTZTX29yaWdfbmM8LXN1YnNldF90YXhhKHBzMTZTX29yaWdfbmMsIE9yZGVyIT0iQ2hsb3JvcGxhc3QiIHwgaXMubmEoT3JkZXIpKQoKCiMxMSw0ODIgYmFjdGVyaWFsIHRheGEKcHMxNlNfYmFjPC1zdWJzZXRfdGF4YShwczE2U19vcmlnX25jLCBLaW5nZG9tID09ICJCYWN0ZXJpYSIpCiMxMDcgYXJjaGFlYQpwczE2U19hcmNoPC1zdWJzZXRfdGF4YShwczE2U19vcmlnX25jLCBLaW5nZG9tID09ICJBcmNoYWVhIikKYGBgCgpyYXJlZnkKYGBge3J9CnNldC5zZWVkKDExKQpzb3J0KHNhbXBsZV9zdW1zKHBzMTZTX2JhYykpCnN1bW1hcnkoc2FtcGxlX3N1bXMocHMxNlNfYmFjKSkKc2Qoc2FtcGxlX3N1bXMocHMxNlNfYmFjKSkKYGBgCgpgYGB7cn0KI3JhcmVmYWN0aW9uIGl0ZXJhdGl2ZQojcHVsbCBvdXQgb3R1X3RhYmxlIGFuZCByYXJlZnkgYXMgcGVyIFAuIFNjaGxvc3MgKDIwMjMpCnBzMTZTX2JhY19yYXJlZnlfaXRlciA8LSBwczE2U19iYWMKb3R1X3RhYiA8LSBkYXRhLmZyYW1lKG90dV90YWJsZShwczE2U19iYWNfcmFyZWZ5X2l0ZXIpKQpwczE2U19iYWNfcmFyZWZ5X2l0ZXJfdGFiIDwtIHJyYXJlZnkucGVybSh4ID0gb3R1X3RhYiwgc2FtcGxlID0gODAwMCwgbiA9IDI1MCwgcm91bmQub3V0ID0gVCkKI3VwZGF0ZSBvdHUgdGFibGUgaW4gcGh5bHNvZXEgb2JqZWN0Cm90dV90YWJsZShwczE2U19iYWNfcmFyZWZ5X2l0ZXIpIDwtICBvdHVfdGFibGUocHMxNlNfYmFjX3JhcmVmeV9pdGVyX3RhYiwgdGF4YV9hcmVfcm93cyA9IEYpCiNyZW1vdmUgdGF4YSB3aXRoIDAgY291bnRzIGFjcm9zcyBhbGwgcmFyZWZpZWQgc2FtcGxlcwpwczE2U19iYWNfcmFyZWZ5X2l0ZXIgPC0gcHJ1bmVfdGF4YSh0YXhhX3N1bXMocHMxNlNfYmFjX3JhcmVmeV9pdGVyKSA+IDAsIHBzMTZTX2JhY19yYXJlZnlfaXRlcikgCgoKc2FtcGxlX3N1bXMocHMxNlNfYmFjX3JhcmVmeV9pdGVyKQoKI2NvbXBhcmUgdHdvIHBlcm11dGVkIG90dSB0YWJsZSB0byBlbnN1cmUgaXQgd29ya2VkLiAKVmlldyhvdHVfdGFibGUocHMxNlNfYmFjKVsxOjEwLCAxOjEwXSkKVmlldyhvdHVfdGFibGUocHMxNlNfYmFjX3JhcmVmeV9pdGVyKVsxOjEwLCAxOjEwXSkKYGBgCgpzYXZlIG91dHB1dCBmb3IgZG93bnN0cmVhbSB1c2UKYGBgeyNyfQpzYXZlLmltYWdlKCJ+L0Rlc2t0b3AvR2l0X3Byb2plY3RzL0FTRC9EYXRhL3BzX2JhY19yYXJlZnlfaXRlci5SRGF0YSIpCmBgYAoK</div>
 
 
 

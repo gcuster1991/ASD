@@ -5,7 +5,10 @@ output: html_notebook
 
 load packages
 ```{r}
-library(phyloseq)
+require(tidyverse)
+  require(phyloseq)
+require(ggplot2)
+  require(EcolUtils)
 ```
 
 
@@ -13,20 +16,49 @@ read in raw otu table
 ```{r}
 ps_orig_16S<-readRDS("../Data/psMeta.RDS")
 ```
-
-
 filter non-bacterial reads
 ```{r}
+#remove chloroplast
+# 313 chloroplast or mitochondrial taxa
+ps16S_orig_nc<-subset_taxa(ps_orig_16S, Family!= "Mitochondria" | is.na(Family))
+ps16S_orig_nc<-subset_taxa(ps16S_orig_nc, Order!="Chloroplast" | is.na(Order))
 
+
+#11,482 bacterial taxa
+ps16S_bac<-subset_taxa(ps16S_orig_nc, Kingdom == "Bacteria")
+#107 archaea
+ps16S_arch<-subset_taxa(ps16S_orig_nc, Kingdom == "Archaea")
 ```
 
 rarefy
 ```{r}
+set.seed(11)
+sort(sample_sums(ps16S_bac))
+summary(sample_sums(ps16S_bac))
+sd(sample_sums(ps16S_bac))
+```
 
+```{r}
+#rarefaction iterative
+#pull out otu_table and rarefy as per P. Schloss (2023)
+ps16S_bac_rarefy_iter <- ps16S_bac
+otu_tab <- data.frame(otu_table(ps16S_bac_rarefy_iter))
+ps16S_bac_rarefy_iter_tab <- rrarefy.perm(x = otu_tab, sample = 8000, n = 250, round.out = T)
+#update otu table in phylsoeq object
+otu_table(ps16S_bac_rarefy_iter) <-  otu_table(ps16S_bac_rarefy_iter_tab, taxa_are_rows = F)
+#remove taxa with 0 counts across all rarefied samples
+ps16S_bac_rarefy_iter <- prune_taxa(taxa_sums(ps16S_bac_rarefy_iter) > 0, ps16S_bac_rarefy_iter) 
+
+
+sample_sums(ps16S_bac_rarefy_iter)
+
+#compare two permuted otu table to ensure it worked. 
+View(otu_table(ps16S_bac)[1:10, 1:10])
+View(otu_table(ps16S_bac_rarefy_iter)[1:10, 1:10])
 ```
 
 save output for downstream use
-```{r}
-
+```{#r}
+save.image("~/Desktop/Git_projects/ASD/Data/ps_bac_rarefy_iter.RData")
 ```
 
