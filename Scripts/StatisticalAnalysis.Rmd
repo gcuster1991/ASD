@@ -64,14 +64,37 @@ ggplot(md) + geom_boxplot(aes(x = time, y = EC, color = Treatment, group = time)
 ggplot(md) + geom_boxplot(aes(x = time, y = EC, color = Treatment, group = time)) + facet_wrap("Treatment")
 
 #nitrate with regression
-ggplot(md) + geom_boxplot(aes(x = time, y = NitrateN, color = Treatment, group = time)) + geom_smooth( data = md, aes(x=time, y = NitrateN, group = "Treatment"), method = "lm", se = F) + facet_wrap("Treatment")
+ggplot(md) + geom_boxplot(aes(x = time, y = NitrateNperkgDrySoil, color = Treatment, group = time)) + geom_smooth( data = md, aes(x=time, y = NitrateNperkgDrySoil, group = "Treatment"), method = "lm", se = F) + facet_wrap("Treatment")
 #without regression line
-ggplot(md) + geom_boxplot(aes(x = time, y = NitrateN, color = Treatment, group = time)) + facet_wrap("Treatment")
+ggplot(md) + geom_boxplot(aes(x = time, y = NitrateNperkgDrySoil, color = Treatment, group = time)) + facet_wrap("Treatment")
 
 #ammonium with regression
-ggplot(md) + geom_boxplot(aes(x = time, y = AmmoniumN, color = Treatment, group = time)) + geom_smooth( data = md, aes(x=time, y = AmmoniumN, group = "Treatment"), method = "lm", se = F) + facet_wrap("Treatment")
+ggplot(md) + geom_boxplot(aes(x = time, y = NH4NperkgDrySoil, color = Treatment, group = time)) + geom_smooth( data = md, aes(x=time, y = NH4NperkgDrySoil, group = "Treatment"), method = "lm", se = F) + facet_wrap("Treatment")
 #without regression line
-ggplot(md) + geom_boxplot(aes(x = time, y = AmmoniumN, color = Treatment, group = time)) + facet_wrap("Treatment")
+ggplot(md) + geom_boxplot(aes(x = time, y = NH4NperkgDrySoil, color = Treatment, group = time)) + facet_wrap("Treatment")
+
+
+#non-parametric regression
+#Ph
+for (i in 1:length(unique(md$Treatment))){
+  print(unique(md$Treatment[i]))
+  md %>% filter(Treatment == unique(md$Treatment[i])) %>% mblm(pH ~ time, data = .) %>% summary() %>% print() 
+}
+#EC
+for (i in 1:length(unique(md$Treatment))){
+  print(unique(md$Treatment[i]))
+  md %>% filter(Treatment == unique(md$Treatment[i])) %>% mblm(EC ~ time, data = .) %>% summary() %>% print() 
+}
+#nitrate
+for (i in 1:length(unique(md$Treatment))){
+  print(unique(md$Treatment[i]))
+  md %>% filter(Treatment == unique(md$Treatment[i])) %>% mblm(NitrateNperkgDrySoil ~ time, data = .) %>% summary() %>% print() 
+}
+#ammonium
+for (i in 1:length(unique(md$Treatment))){
+  print(unique(md$Treatment[i]))
+  md %>% filter(Treatment == unique(md$Treatment[i])) %>% mblm(NH4NperkgDrySoil ~ time, data = .) %>% summary() %>% print() 
+}
 ```
 ordination of edaphic conditions (without 55 dap point)
 ```{r}
@@ -113,6 +136,9 @@ df$pH <- md_heatmap$pH
   geom_text(data = spp.scrs, aes(x = NMDS1, y = NMDS2, label = Species),
             size = 3)
   
+md_dist <- dist(md[,c("pH", "EC", "NitrateNperkgDrySoil", "NH4NperkgDrySoil")], method = "euclidean")
+adonis2(md_dist~ Covercrop + WheatM + Timepoint, data = md, strata = md$Timepoint)
+#pairwiseAdonis::pairwise.adonis2(md_dist ~ Treatment, data = md, strata = md$Timepoint)
 ```
 heat map of edaphic conditions
 ```{r}
@@ -120,7 +146,7 @@ heat map of edaphic conditions
 #md <- data.frame(sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6")))
 md <- data.frame(sample_data(ps16S_bac_rarefy_iter))
 
-md_heatmap <- md %>% select(time, Treatment, pH, EC, NitrateNperkgDrySoil, NH4NperkgDrySoil) %>% filter(time != 0)
+md_heatmap <- md %>% select(time, Treatment, pH, EC, NitrateN, AmmoniumN) %>% filter(time != 0)
 #to remove time 0 if we look at nitrate and ammonia values bc they are missing at t0
 #md_heatmap <- md %>% select(time, Treatment, pH, EC, NitrateNperkgDrySoil, NH4NperkgDrySoil) %>% filter(time != 0)
 
@@ -169,17 +195,33 @@ alphadiv$pH <- sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t
 
 ggplot(alphadiv) + geom_boxplot(aes(x = time, y = Observed, color = treatment, group = time)) + geom_smooth( data = alphadiv, aes(x=time, y = Observed, group = "treatment"), method = "lm", se = F) + facet_wrap("treatment")
 
+ggplot(alphadiv) + geom_boxplot(aes(x = time, y = Shannon, color = treatment, group = time)) + geom_smooth( data = alphadiv, aes(x=time, y = Shannon, group = "treatment"), method = "lm", se = F) + facet_wrap("treatment")
+
+ggplot(alphadiv) + geom_boxplot(aes(x = time, y = Simpson, color = treatment, group = time)) + geom_smooth( data = alphadiv, aes(x=time, y = Simpson, group = "treatment"), method = "lm", se = F) + facet_wrap("treatment")
+
 #lm but wont meet requirements of lm
-for (i in 1:length(unique(alphadiv$treatment))){
-  print(unique(alphadiv$treatment[i]))
-  alphadiv %>% filter(treatment == unique(alphadiv$treatment[i])) %>% lm(Observed ~ time, data = .) %>% summary() %>% print() %>% residuals() %>% hist()
-}
+#for (i in 1:length(unique(alphadiv$treatment))){
+#  print(unique(alphadiv$treatment[i]))
+#  alphadiv %>% filter(treatment == unique(alphadiv$treatment[i])) %>% lm(Observed ~ time, data = .) %>% summary() %>% print() %>% residuals() %>% hist()
+#}
 
 #non-parametric regression
 for (i in 1:length(unique(alphadiv$treatment))){
   print(unique(alphadiv$treatment[i]))
   alphadiv %>% filter(treatment == unique(alphadiv$treatment[i])) %>% mblm(Observed ~ time, data = .) %>% summary() %>% print() 
 }
+
+for (i in 1:length(unique(alphadiv$treatment))){
+  print(unique(alphadiv$treatment[i]))
+  alphadiv %>% filter(treatment == unique(alphadiv$treatment[i])) %>% mblm(Shannon ~ time, data = .) %>% summary() %>% print() 
+}
+
+for (i in 1:length(unique(alphadiv$treatment))){
+  print(unique(alphadiv$treatment[i]))
+  alphadiv %>% filter(treatment == unique(alphadiv$treatment[i])) %>% mblm(Simpson ~ time, data = .) %>% summary() %>% print() 
+}
+
+
 ```
 
 #beta-diversity
@@ -192,7 +234,7 @@ ord_plot<-plot_ordination(ps16S_bac_rarefy_iter, ordination = com_ord, type = "s
 com_df_nmds<-data.frame(com_ord$points)
 com_df_nmds$pH <- sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6"))$pH
 com_df_nmds$EC <- sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6"))$EC
-com_df_nmds$pH <- sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6"))$pH
+com_df_nmds$NitrateN <- sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6"))$NitrateN
 com_df_nmds$timepoint <- sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6"))$Timepoint
 com_df_nmds$treatment<- sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6"))$Treatment
 com_df_nmds$covercrop <- sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6"))$Covercrop
@@ -200,7 +242,7 @@ com_df_nmds$wheatm <- sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoin
 com_df_nmds$time <- sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6"))$time
 #plot nmds 
 plot(com_df_nmds$MDS1 ~ com_df_nmds$pH)
-ggplot(com_df_nmds, aes(x = MDS1, y = MDS2, color = treatment, shape = timepoint, alpha = pH)) + geom_point(aes(size=7)) + theme_classic() 
+ggplot(com_df_nmds, aes(x = MDS1, y = pH, color = treatment, shape = timepoint, alpha = pH)) + geom_point(aes(size=7)) + theme_classic() 
 
 
 #axis 1 with pH
@@ -208,6 +250,7 @@ summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH))
 hist(residuals(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH)))
 #looks normal enough, but just in case heres a non-parametric regression
 summary(mblm(MDS1 ~ pH, dataframe = com_df_nmds))
+#summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH, dataframe = com_df_nmds))
 ```
 global adonis testing
 ```{r}
@@ -520,7 +563,8 @@ https://cran.r-project.org/web/packages/corncob/vignettes/corncob-intro.html
 Run model at genus level. 
  
 ```{r}
-cc_ps<- ps16S_bac_rarefy_iter %>% tax_glom("Genus") %>% subset_samples(Timepoint != "t6")
+#cc_ps<- ps16S_bac_rarefy_iter %>% tax_glom("Genus") %>% subset_samples(Timepoint != "t6")
+cc_ps<- ps16S_bac_rarefy_iter %>% tax_glom("Phylum") 
 set.seed(1)
 #Testing for taxa that significantly respond to Nitrogen, pH, and POA2021 cover, while controlling for POA2021 cover on dispersion.
 #da_analysis <- differentialTest(formula = ~ X2021.Spring.Poa.. + Nitrogen + pH, phi.formula = ~  X2021.Spring.Poa.., formula_null = ~ 1, phi.formula_null = ~  X2021.Spring.Poa.., test = "Wald", boot = FALSE, data = turf16S_cc_rarefy, fdr_cutoff = 0.05)
