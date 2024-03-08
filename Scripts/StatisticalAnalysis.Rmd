@@ -4,6 +4,7 @@ output: html_notebook
 ---
 ```{r}
 require(mblm)
+require(Phyloseq)
 ```
 
 
@@ -580,4 +581,14 @@ plot.differentialTest2(da_analysis, level= c("Phylum","Order", "Family", "Genus"
 plot.differentialTest2(da_analysis, level= c("Family"))
 ```
 
+#abudnance of specific groups
+```{r}
+require(microbiome)
+require(tidyverse)
+cc_ps <- ps16S_bac_rarefy_iter %>% tax_glom("Phylum")
+boxplot_abundance(cc_ps, x = "Timepoint", y = "ASV3" )
+boxplot_abundance(cc_ps, x = "pH", y = "ASV3" )
+summary(lm(data.frame(otu_table(cc_ps))$ASV3 ~ data.frame(sample_data(cc_ps))$pH))
+
+```
 
