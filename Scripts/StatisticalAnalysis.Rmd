@@ -4,7 +4,8 @@ output: html_notebook
 ---
 ```{r}
 require(mblm)
-require(Phyloseq)
+require(phyloseq)
+require(ggplot2)
 ```
 
 
@@ -262,10 +263,13 @@ ps_adonis<-function(physeq){
        physeq_dist<-parallelDist::parDist(as.matrix(t(otu_tab)), method = "bray")}
             else{physeq_dist<-parallelDist::parDist(as.matrix(otu_tab), method = "bray")}
   print(anova(vegan::betadisper(physeq_dist, md_tab$Treatment)))
-  vegan::adonis2(physeq_dist ~ WheatM + Covercrop + Timepoint + pH , data = md_tab, permutations = 100)
+  vegan::adonis2(physeq_dist ~ pH + Treatment + Timepoint, data = md_tab, permutations = 100)
 }
-
+ps_adonis(ps16S_bac_rarefy_iter)
 ps_adonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6"))
+
+
+
 ```
 
 #split a few time points and see trends
@@ -298,10 +302,14 @@ ps_adonis<-function(physeq){
        physeq_dist<-parallelDist::parDist(as.matrix(t(otu_tab)), method = "bray")}
             else{physeq_dist<-parallelDist::parDist(as.matrix(otu_tab), method = "bray")}
   print(anova(vegan::betadisper(physeq_dist, md_tab$Treatment)))
-  vegan::adonis2(physeq_dist ~ WheatM + Covercrop + pH , data = md_tab, permutations = 100)
+  vegan::adonis2(physeq_dist ~ pH + WheatM * Covercrop  , data = md_tab, permutations = 100)
 }
 
 ps_adonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t0"))
+
+
+
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t0"))
 
 ```
 
@@ -332,10 +340,12 @@ ps_adonis<-function(physeq){
        physeq_dist<-parallelDist::parDist(as.matrix(t(otu_tab)), method = "bray")}
             else{physeq_dist<-parallelDist::parDist(as.matrix(otu_tab), method = "bray")}
   print(anova(vegan::betadisper(physeq_dist, md_tab$Treatment)))
-  vegan::adonis2(physeq_dist ~ WheatM + Covercrop + pH , data = md_tab, permutations = 100)
+  vegan::adonis2(physeq_dist ~  pH + WheatM * Covercrop , data = md_tab, permutations = 100)
 }
 
 ps_adonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t1"))
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t1"))
+
 ```
 
 day 7
@@ -365,10 +375,11 @@ ps_adonis<-function(physeq){
        physeq_dist<-parallelDist::parDist(as.matrix(t(otu_tab)), method = "bray")}
             else{physeq_dist<-parallelDist::parDist(as.matrix(otu_tab), method = "bray")}
   print(anova(vegan::betadisper(physeq_dist, md_tab$Treatment)))
-  vegan::adonis2(physeq_dist ~ WheatM + Covercrop + pH , data = md_tab, permutations = 100)
+  vegan::adonis2(physeq_dist ~ pH + WheatM * Covercrop , data = md_tab, permutations = 100)
 }
 
 ps_adonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t3"))
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t3"))
 ```
 
 
@@ -399,10 +410,11 @@ ps_adonis<-function(physeq){
        physeq_dist<-parallelDist::parDist(as.matrix(t(otu_tab)), method = "bray")}
             else{physeq_dist<-parallelDist::parDist(as.matrix(otu_tab), method = "bray")}
   print(anova(vegan::betadisper(physeq_dist, md_tab$Treatment)))
-  vegan::adonis2(physeq_dist ~ WheatM + Covercrop + pH , data = md_tab, permutations = 100)
+  vegan::adonis2(physeq_dist ~ pH + WheatM * Covercrop , data = md_tab, permutations = 100)
 }
 
 ps_adonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t4"))
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t4"))
 ```
 
 index <- c("t0", "t1", "t2", "t3", "t4", "t5", "t6")
@@ -431,10 +443,11 @@ ps_adonis<-function(physeq){
        physeq_dist<-parallelDist::parDist(as.matrix(t(otu_tab)), method = "bray")}
             else{physeq_dist<-parallelDist::parDist(as.matrix(otu_tab), method = "bray")}
   print(anova(vegan::betadisper(physeq_dist, md_tab$Treatment)))
-  vegan::adonis2(physeq_dist ~ WheatM + Covercrop + pH , data = md_tab, permutations = 100)
+  vegan::adonis2(physeq_dist ~ pH + WheatM * Covercrop , data = md_tab, permutations = 100)
 }
 
 ps_adonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t5"))
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t5"))
 ```
 
 index <- c("t0", "t1", "t2", "t3", "t4", "t5", "t6")
@@ -465,11 +478,70 @@ ps_adonis<-function(physeq){
        physeq_dist<-parallelDist::parDist(as.matrix(t(otu_tab)), method = "bray")}
             else{physeq_dist<-parallelDist::parDist(as.matrix(otu_tab), method = "bray")}
   print(anova(vegan::betadisper(physeq_dist, md_tab$Treatment)))
-  vegan::adonis2(physeq_dist ~ WheatM + Covercrop + pH , data = md_tab, permutations = 100)
+  vegan::adonis2(physeq_dist ~ pH + WheatM * Covercrop , data = md_tab, permutations = 100)
 }
 
 ps_adonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t6"))
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t6"))
 ```
+
+Pairwise adonis testing and then plotting of timpeoints within a treatment 
+```{r}
+ps_pairwiseadonis<-function(physeq){
+  otu_tab<-data.frame(phyloseq::otu_table(physeq))
+  md_tab<-data.frame(phyloseq::sample_data(physeq))
+    if(taxa_are_rows(physeq)== T){
+       physeq_dist<-parallelDist::parDist(as.matrix(t(otu_tab)), method = "bray")}
+            else{physeq_dist<-parallelDist::parDist(as.matrix(otu_tab), method = "bray")}
+pairwiseAdonis::pairwise.adonis(x = physeq_dist, factors = md_tab$Treatment, p.adjust.m = "fdr", perm = 100)
+}
+ps_pairwiseadonis(ps16S_bac_rarefy_iter)
+
+
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6"))
+
+#split by treatment and examine pre and post treatments
+
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Treatment == "2spp"))
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Treatment == "2spp+WM"))
+
+
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Treatment == "CC"))
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Treatment == "CC+WM"))
+
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Treatment == "F+W"))
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Treatment == "F+WM"))
+
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Treatment == "Tr"))
+ps_pairwiseadonis(subset_samples(ps16S_bac_rarefy_iter, Treatment == "Tr+WM"))
+
+
+```
+
+Timepoints across treatment groups
+index <- c("t0", "t1", "t2", "t3", "t4", "t5", "t6")
+values <- c("0", "2", "5", "7", "14", "21", "55")
+```{r}
+ps_subset <- ps16S_bac_rarefy_iter %>% subset_samples(Timepoint =! "t1") %>% subset_samples(Timepoint != "t2") %>% subset_samples(Timepoint != "t3") %>% subset_samples(Timepoint != "t4")
+
+
+com_ord <- ordinate(ps_subset, method = "NMDS", distance = "bray", k = 3)
+#ord_plot<-plot_ordination(ps16S_bac_rarefy_iter, ordination = com_ord, type = "samples", axes = 1:2, color = "Treatment", shape = "Timepoint")
+
+com_df_nmds<-data.frame(com_ord$points)
+com_df_nmds$pH <- sample_data(ps_subset)$pH
+com_df_nmds$EC <- sample_data(ps_subset)$EC
+com_df_nmds$pH <- sample_data(ps_subset)$pH
+com_df_nmds$timepoint <- sample_data(ps_subset)$Timepoint
+com_df_nmds$treatment<- sample_data(ps_subset)$Treatment
+com_df_nmds$covercrop <- sample_data(ps_subset)$Covercrop
+com_df_nmds$wheatm <- sample_data(ps_subset)$WheatM
+com_df_nmds$time <- sample_data(ps_subset)$time
+#plot nmds with colors etc 
+ 
+ggplot(com_df_nmds, aes(x = MDS1, y = MDS2, color = treatment, shape = timepoint, alpha = pH)) + geom_point(aes(size=7)) + theme_classic() 
+```
+
 
 #corncob regression models
 ```{r}
