@@ -812,3 +812,152 @@ summary(lm(data.frame(otu_table(cc_ps))$ASV3 ~ data.frame(sample_data(cc_ps))$pH
 
 ```
 
+## beta boxplots throuhg time compared to control
+works...
+```{r}
+plotDistances = function(p, m, s, d) {
+
+ #p= subset_samples(ps16S_bac_rarefy_iter, WheatM == "WM")
+  # p=ps16S_bac_rarefy_iter
+  # m = "bray"
+  # s = "sample.names"
+  # d = "Covercrop"
+  
+  # calc distances
+  wu = phyloseq::distance(p, m)
+  wu.m = melt(as.matrix(wu))
+  
+  # remove self-comparisons
+  wu.m = wu.m %>%
+    filter(as.character(Var1) != as.character(Var2)) %>%
+    mutate_if(is.factor,as.character)
+  
+  # get sample data (S4 error OK and expected)
+  sd = data.frame(sample_data(p)) %>%
+    select(s, d, WheatM) %>%
+    mutate_if(is.factor,as.character)
+  sd$Covercrop <- factor(sd$Covercrop, levels = c("NoCC", "Tr", "CC", "2Spp"))
+ # sd$Timepoint <- factor(sd$Timepoint, levels = c("to", "t1", "t2", "t3", "t4", "t5", "t6"))
+  # combined distances with sample data
+  colnames(sd) = c("Var1", "Type1", "WheatM")
+  
+  wu.sd = left_join(wu.m, sd, by = "Var1")
+  
+  colnames(sd) = c("Var2", "Type2", "WheatM")
+  wu.sd = left_join(wu.sd, sd, by = "Var2")
+  
+  #keep only comparisons within single cover crop type
+  wu.sd_test <- wu.sd[wu.sd$Type1 == wu.sd$Type2,]
+  #extract time points from sample name
+  wu.sd_test$Timeval1 <- str_split(string = wu.sd_test$Var1, "-", n = 5, simplify = T)[,2]
+  wu.sd_test$Timeval2 <- str_split(string = wu.sd_test$Var2, "-", n = 5, simplify = T)[,2]
+  
+  #keep only those comparing to time 0
+    wu.sd_test <- wu.sd_test[wu.sd_test$Timeval1 == "t0",]
+    #gives the same output, so its working to filter as expected
+ # wu.sd_test2 <- wu.sd_test[wu.sd_test$Timeval2 == "t0",]
+  
+  #remove this line to plot all comparisons. 
+  #wu.sd = wu.sd %>% filter(Type1 == "Hand" | Type1 == "Non-Treated")
+  
+  # plot
+  ggplot(wu.sd_test, aes(x = Timeval2, y = value, fill = Type1)) +
+    theme_bw() +
+    #geom_point() +
+   # geom_boxplot(aes(color = ifelse(Type1 == Type2, "red", "black"))) +
+    geom_boxplot() +
+    scale_color_identity() +
+    facet_wrap(~ WheatM.x, scales = "free_x") +
+    theme(axis.text.x=element_text(angle = 45, hjust = 1, size = 5)) + 
+    ggtitle(paste0("Distance Metric = ", m))
+  
+}
+```
+testing code
+```{r}
+plotDistances = function(p, m, s, d) {
+
+ #p= subset_samples(ps16S_bac_rarefy_iter, WheatM == "WM")
+ #  p=ps16S_bac_rarefy_iter
+#    m = "bray"
+#     s = "sample.names"
+#      d = "Covercrop"
+  
+  # calc distances
+  wu = phyloseq::distance(p, m)
+  wu.m = melt(as.matrix(wu))
+  
+  # remove self-comparisons
+  wu.m = wu.m %>%
+    filter(as.character(Var1) != as.character(Var2)) %>%
+    mutate_if(is.factor,as.character)
+  
+  # get sample data (S4 error OK and expected)
+  sd = data.frame(sample_data(p)) %>%
+    select(s, d, WheatM, time) %>%
+    mutate_if(is.factor,as.character)
+  sd$Covercrop <- factor(sd$Covercrop, levels = c("NoCC", "Tr", "CC", "2Spp"))
+ # sd$Timepoint <- factor(sd$Timepoint, levels = c("to", "t1", "t2", "t3", "t4", "t5", "t6"))
+  # combined distances with sample data
+  colnames(sd) = c("Var1", "Type1", "WheatM", "time")
+  
+  wu.sd = left_join(wu.m, sd, by = "Var1")
+  
+  colnames(sd) = c("Var2", "Type2", "WheatM", "time")
+  wu.sd = left_join(wu.sd, sd, by = "Var2")
+  
+  #keep only comparisons within single cover crop type
+  wu.sd_test <- wu.sd[wu.sd$Type1 == wu.sd$Type2,]
+  
+  #extract time points from sample name
+  wu.sd_test$Timeval1 <- str_split(string = wu.sd_test$Var1, "-", n = 5, simplify = T)[,2]
+  wu.sd_test$Timeval2 <- str_split(string = wu.sd_test$Var2, "-", n = 5, simplify = T)[,2]
+  
+  #keep only those comparing to time 0
+    wu.sd_test <- wu.sd_test[wu.sd_test$Timeval2 == "t0",]
+
+    
+    #simplify the names of the wu.sd.test
+  wu.sd_test_plotting <- wu.sd_test %>% select(Var1, Var2, value, Type1, WheatM.x, time.x, Type2, Timeval1, Timeval2)
+  wu.sd_test_plotting$time <- wu.sd_test_plotting$time.x
+  wu.sd_test_plotting$time.x = NULL
+   wu.sd_test_plotting$WheatM <- wu.sd_test_plotting$WheatM.x
+   wu.sd_test_plotting$WheatM.x = NULL
+   
+   wu.sd_test_plotting$WheatM <-as.factor(wu.sd_test_plotting$WheatM )
+  
+  #remove this line to plot all comparisons. 
+  #wu.sd = wu.sd %>% filter(Type1 == "Hand" | Type1 == "Non-Treated")
+  
+  # plot
+  ggplot(wu.sd_test_plotting, aes(x = Timeval1, y = value)) +
+    theme_bw() +
+  #geom_point() +
+   # geom_boxplot(aes(color = ifelse(Type1 == Type2, "red", "black"))) +
+    geom_boxplot(aes(x = Timeval1, y = value, fill = WheatM)) +
+    scale_color_identity() +
+    #facet_wrap(~ Type1*WheatM, scales = "free_x", ncol = 2) +
+    facet_wrap(~ Type1, scales = "free_x", ncol = 2) +
+    theme(axis.text.x=element_text(angle = 45, hjust = 1, size = 5)) + 
+    ggtitle(paste0("Distance Metric = ", m)) + geom_smooth(data = wu.sd_test_plotting, aes(group=WheatM,),  se= T, method = "loess") 
+  
+
+                                                           
+}
+```
+
+```{r}
+a<-plotDistances(p = subset_samples(physeq= ps16S_bac_rarefy_iter, WheatM == "WM"), m = "bray", s = "sample.names", d = "Covercrop")
+a <- a + ggtitle("Time 1 Bray-Curtis Dissimlarities")
+a
+
+a<-plotDistances(p = subset_samples(physeq= ps16S_bac_rarefy_iter, WheatM == "NoWM"), m = "bray", s = "sample.names", d = "Covercrop")
+a <- a + ggtitle("Time 1 Bray-Curtis Dissimlarities")
+a
+
+a<-plotDistances(p = ps16S_bac_rarefy_iter, m = "bray", s = "sample.names", d = "Covercrop")
+a <- a + ggtitle("Time 1 Bray-Curtis Dissimlarities")
+a
+```
+
+
