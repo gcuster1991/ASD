@@ -7,6 +7,8 @@ require(mblm)
 require(phyloseq)
 require(ggplot2)
 require(tidyverse)
+require(rstatix)
+require(ggpubr)
 ```
 
 
@@ -98,6 +100,209 @@ ggplot(md) + geom_boxplot(aes(x = time, y = AmmoniumN, color = Treatment, group 
 ggplot(md) + geom_boxplot(aes(x = time, y = AmmoniumN, color = Treatment, group = time)) + facet_wrap("Treatment")
 ```
 
+aov of physiochemical 
+```{r}
+#all samples
+md<-data.frame(sample_data(ps16S_bac_rarefy_iter))
+#global
+#ph
+mod<- aov(pH ~ Covercrop + Timepoint + WheatM, data = md)
+shapiro_test(mod$residuals)
+boxplot(md$pH ~ md$WheatM)
+boxplot(md$pH ~ md$Covercrop)
+boxplot(md$pH ~ md$Timepoint)
+plot(TukeyHSD(mod, "WheatM"))
+
+res_aov <- md %>% anova_test(pH ~ Covercrop + Timepoint + WheatM)
+print(res_aov)
+
+      
+res_tukey <- md %>% tukey_hsd(formula = pH ~ Covercrop + Timepoint + WheatM)
+print(res_tukey[res_tukey$p.adj<0.06,])
+```
+
+```{r}
+sort(mod$residuals, decreasing = T)
+md_sub <- md %>% filter(sample.names != "asd-t7-a-201-2sppb-asd")
+md_sub <- md_sub %>% filter(sample.names != "asd-t7-a-105-asdi")
+mod<- aov(EC ~ Covercrop + Timepoint + WheatM, data = md_sub)
+shapiro_test(mod$residuals)
+hist(mod$residuals)
+#normal enough
+
+boxplot(md$EC ~ md$WheatM)
+boxplot(md$EC ~ md$Covercrop)
+boxplot(md$EC ~ md$Timepoint)
+
+
+res_aov <- md_sub %>% anova_test(EC ~ Covercrop + Timepoint + WheatM)
+print(res_aov)
+
+      
+res_tukey <- md_sub %>% tukey_hsd(formula = EC ~ Covercrop + Timepoint + WheatM)
+print(res_tukey[res_tukey$p.adj<0.06,])
+          
+```
+
+
+```{r}
+#remove outliers and missing data
+md_sub <- md %>% filter(sample.names != "asd-t1-a-102-tr")
+md_sub <- md_sub %>% filter(sample.names != "asd-t3-a-301-asd")
+md_sub <- md_sub %>% filter(sample.names != "asd-t3-a-201-2sppb")
+md_sub <- md_sub %>% filter(sample.names != "asd-t1-a-103-cc")
+md_sub_n <- md_sub %>% filter(Timepoint!= "t0")
+md_sub_n <- md_sub_n %>% filter(NitrateN > 0)
+min(md_sub_n$NitrateN)
+
+#check residauls
+mod <- aov(log(NitrateN) ~ Covercrop + Timepoint + WheatM, data = md_sub_n)
+shapiro_test(mod$residuals)
+hist(mod$residuals)
+
+
+#xplore data
+boxplot(log(md_sub_n$NitrateN) ~ md_sub_n$WheatM)
+boxplot(log(md_sub_n$NitrateN) ~ md_sub_n$Covercrop)
+boxplot(md_sub_n$NitrateN ~ md_sub_n$Covercrop)
+boxplot(log(md_sub_n$NitrateN) ~ md_sub_n$Timepoint)
+
+
+res_aov <- md_sub_n %>% anova_test(log(NitrateN) ~ Covercrop + Timepoint + WheatM)
+print(res_aov)
+
+
+      
+res_tukey <- md_sub_n %>% tukey_hsd(formula = log(NitrateN) ~ Covercrop + Timepoint + WheatM)
+print(res_tukey[res_tukey$p.adj<0.06,])
+
+
+          
+```
+
+```{r}
+#check residauls
+mod <- aov(log(AmmoniumN) ~ Covercrop + Timepoint + WheatM, data = md)
+shapiro_test(mod$residuals)
+hist(mod$residuals)
+
+
+#xplore data
+boxplot(log(md$AmmoniumN) ~ md$WheatM)
+boxplot(md$AmmoniumN ~ md$Covercrop)
+boxplot(md$AmmoniumN ~ md$Timepoint)
+
+
+res_aov <- md %>% anova_test(log(AmmoniumN) ~ Covercrop + Timepoint + WheatM)
+print(res_aov)
+
+      
+res_tukey <- md %>% tukey_hsd(formula = log(AmmoniumN) ~ Covercrop + Timepoint + WheatM)
+print(res_tukey[res_tukey$p.adj<0.06,])
+          
+```
+
+
+split by treatment and run anova
+```{r}
+#just ran and swtiched the response variable instaed of recoding or loopoing. I'm being lazy and want to get this done.
+#checked res noramlity by chaing respone 
+md<-data.frame(sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t6")))
+#global
+#ph
+mod<- aov(log(NitrateN) ~ Covercrop + WheatM, data = md)
+shapiro_test(mod$residuals)
+hist(mod$residuals)
+boxplot(md$NitrateN ~ md$WheatM)
+boxplot(md$NitrateN ~ md$Covercrop)
+#boxplot(md$pH ~ md$Timepoint)
+
+
+res_aov <- md %>% anova_test(pH ~ Covercrop  + WheatM)
+print(res_aov)
+
+
+res_aov <- md %>% anova_test(EC ~ Covercrop  + WheatM)
+print(res_aov)
+
+res_aov <- md %>% anova_test(AmmoniumN ~ Covercrop  + WheatM)
+print(res_aov)
+
+res_aov <- md %>% anova_test(log(NitrateN) ~ Covercrop  + WheatM)
+print(res_aov)
+
+
+      
+res_tukey <- md %>% tukey_hsd(formula = log(NitrateN) ~ Covercrop + WheatM)
+print(res_tukey[res_tukey$p.adj<0.06,])
+
+```
+
+Split by treatment
+```{r}
+#just ran and swtiched the response variable instaed of recoding or loopoing. I'm being lazy and want to get this done.
+#checked res noramlity by chaing respone 
+md<-data.frame(sample_data(subset_samples(ps16S_bac_rarefy_iter, Treatment == "CC+WM")))
+#global
+#ph
+mod<- aov(NitrateN ~ Timepoint, data = md)
+shapiro_test(mod$residuals)
+hist(mod$residuals)
+boxplot(md$NitrateN ~ md$Timepoint)
+
+
+res_aov <- md %>% anova_test(pH ~ Timepoint)
+print(res_aov)
+
+res_aov <- md %>% anova_test(EC ~ Timepoint)
+print(res_aov)
+
+res_aov <- md %>% anova_test(AmmoniumN ~ Timepoint)
+print(res_aov)
+
+res_aov <- md %>% anova_test(NitrateN ~ Timepoint)
+print(res_aov)
+      
+res_tukey <- md %>% tukey_hsd(formula = NitrateN ~ Timepoint)
+print(res_tukey[res_tukey$p.adj<0.06,])
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 edaphic over time (without 55 dap point)
 ```{r}
 md <- data.frame(sample_data(subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t6")))
@@ -128,6 +333,7 @@ for (i in 1:length(unique(md$Treatment))){
   print(unique(md$Treatment[i]))
   md %>% filter(Treatment == unique(md$Treatment[i])) %>% mblm(pH ~ time, data = .) %>% summary() %>% print() 
 }
+
 #EC
 for (i in 1:length(unique(md$Treatment))){
   print(unique(md$Treatment[i]))
@@ -873,6 +1079,7 @@ plotDistances = function(p, m, s, d) {
   
 }
 ```
+
 testing code
 ```{r}
 plotDistances = function(p, m, s, d) {
@@ -959,5 +1166,85 @@ a<-plotDistances(p = ps16S_bac_rarefy_iter, m = "bray", s = "sample.names", d = 
 a <- a + ggtitle("Time 1 Bray-Curtis Dissimlarities")
 a
 ```
+
+
+
+DESeq2
+```{r}
+library(DESeq2)
+#Right side of volcano plot (e.g., positive log fold change is associated with first factor in contrasts argument)
+
+diagdds = phyloseq_to_deseq2(subset_samples(ps_16S_bac_rarefy_iter, time == "t0"), ~ treatment)
+diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
+
+#effect of nitrogen within well watered
+res = results(diagdds, cooksCutoff = FALSE, contrast = c("treatment",  "hnc", "lnc"))
+alpha = 0.01
+sigtab = res[which(res$padj < alpha), ]
+sigtabt0hnclnc = cbind(as(sigtab, "data.frame"))
+head(sigtabt0hnclnc)
+
+EnhancedVolcano(res,
+    lab = rownames(res),
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    title = 'HNC versus LNC t0',
+    pCutoffCol = "padj",
+    pCutoff = 10e-3)
+
+#effect of nitrogen within drought
+res = results(diagdds, cooksCutoff = FALSE, contrast = c("treatment", "hnd", "lnd"))
+alpha = 0.01
+sigtab = res[which(res$padj < alpha), ]
+sigtabt0hndlnd = cbind(as(sigtab, "data.frame"))
+head(sigtabt0hndlnd)
+
+EnhancedVolcano(res,
+    lab = rownames(res),
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    title = 'HND versus LND t0',
+    pCutoffCol = "padj",
+    pCutoff = 10e-3)
+
+#effect of drought within high nitrogen
+res = results(diagdds, cooksCutoff = FALSE, contrast = c("treatment", "hnc", "hnd"))
+alpha = 0.01
+sigtab = res[which(res$padj < alpha), ]
+sigtabt0hnchnd = cbind(as(sigtab, "data.frame"))
+head(sigtabt0hnchnd)
+
+EnhancedVolcano(res,
+    lab = rownames(res),
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    title = 'HNC versus HND t0',
+    pCutoffCol = "padj",
+    pCutoff = 10e-3)
+
+
+#effect of drought within low nitrogen
+res = results(diagdds, cooksCutoff = FALSE, contrast = c("treatment", "lnc", "lnd"))
+alpha = 0.01
+sigtab = res[which(res$padj < alpha), ]
+sigtabtolnclnd = cbind(as(sigtab, "data.frame"))
+head(sigtabtolnclnd)
+
+
+EnhancedVolcano(res,
+    lab = rownames(res),
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    title = 'LNC versus LND t0',
+    pCutoffCol = "padj",
+    pCutoff = 10e-3)
+
+boxplot(data.frame(otu_table(subset_samples(ps_16S_bac_rarefy_iter, time == "t0")))$'OTU_54' ~ sample_data(subset_samples(ps_16S_bac_rarefy_iter, time == "t0"))$treatment)
+
+#OTU 54v is assocaited with LNC and HNC when comparing to their respective Drought conditions
+```
+
+```
+
 
 
