@@ -1064,12 +1064,44 @@ for (i in 1:nrow(dist_bt_groups_filtered_2)){
   }
 }
 
-#FILTER TO ONLY INCLUDE COMPARISONS WITHIN A TREATMETNT GROUP
+#FILTER TO ONLY INCLUDE COMPARISONS WITHIN A TREATMENT GROUP
 dist_bt_groups_filtered_2_matched <- dist_bt_groups_filtered_2 %>% filter(Trt1 == Trt2)
 
 ggplot(data = dist_bt_groups_filtered_2_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + facet_wrap(~Trt1) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  + geom_smooth(data = dist_bt_groups_filtered_2_matched, aes(x = Label, y = Distance, group=Trt1,),  se= T, method = "loess")
 
 
+
+
+dist_bt_groups_filtered_3 <- dist_bt_groups_filtered %>% filter(Label == "Between t0 and t6")
+
+
+#MATCH FIRST SAMPLE TO METADAT TO EXTRACT TREATMENT
+dist_bt_groups_filtered_3$Trt1 <- 'NA'
+for (i in 1:nrow(dist_bt_groups_filtered_3)){
+  for(j in 1:nrow(md_tab)){
+      if(dist_bt_groups_filtered_3[i,]$Item1==md_tab[j,]$sample.names){
+        dist_bt_groups_filtered_3[i,]$Trt1 <- as.character(md_tab[j,]$Treatment)
+      }
+    else{}
+  }
+}
+
+#MATCH SECOND SAMPLE TO METADAT TO EXTRACT TREATMENT
+dist_bt_groups_filtered_3$Trt2 <- 'NA'
+for (i in 1:nrow(dist_bt_groups_filtered_3)){
+  for(j in 1:nrow(md_tab)){
+      if(dist_bt_groups_filtered_3[i,]$Item2==md_tab[j,]$sample.names){
+        dist_bt_groups_filtered_3[i,]$Trt2 <- as.character(md_tab[j,]$Treatment)
+      }
+    else{}
+  }
+}
+
+
+#FILTER TO ONLY INCLUDE COMPARISONS WITHIN A TREATMENT GROUP
+dist_bt_groups_filtered_3_matched <- dist_bt_groups_filtered_3 %>% filter(Trt1 == Trt2)
+
+ggplot(data = dist_bt_groups_filtered_3_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + facet_wrap(~Trt1) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  
 ```
 
 
