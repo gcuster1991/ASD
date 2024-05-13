@@ -914,6 +914,7 @@ c
 
 
 dists <-plotDistances(p = ps16S_bac_rarefy_iter, m = "bray", s = "sample.names", d = "Covercrop")
+
 dists %>% filter(Timeval1 == "t7") %>% group_by(Type1, WheatM) %>% summarize(mean = mean(value), stdev = sd(value)) %>% mutate(std_devCI = 1.96*stdev) %>% mutate(low = mean-std_devCI, high = mean+std_devCI) 
 
 
@@ -1067,11 +1068,72 @@ for (i in 1:nrow(dist_bt_groups_filtered_2)){
 #FILTER TO ONLY INCLUDE COMPARISONS WITHIN A TREATMENT GROUP
 dist_bt_groups_filtered_2_matched <- dist_bt_groups_filtered_2 %>% filter(Trt1 == Trt2)
 
+dist_bt_groups_filtered_2_matched$Treatment<-str_split(dist_bt_groups_filtered_2_matched$Trt2, "[[+]]", simplify = T)[,1]
+dist_bt_groups_filtered_2_matched$WheatM<-str_split(dist_bt_groups_filtered_2_matched$Trt2, "[[+]]", simplify = T)[,2]
+dist_bt_groups_filtered_2_matched$WheatM <- ifelse(dist_bt_groups_filtered_2_matched$WheatM == "W" | dist_bt_groups_filtered_2_matched$WheatM == "", "NOWM", dist_bt_groups_filtered_2_matched$WheatM)
+
+
+mod_distbtpts<-aov(Distance ~ Treatment * WheatM + Label, data = dist_bt_groups_filtered_2_matched)
+#no difference
+summary(mod_distbtpts)
+TukeyHSD(mod_distbtpts, "Trt1")
+
+
+
 ggplot(data = dist_bt_groups_filtered_2_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + facet_wrap(~Trt1) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  + geom_smooth(data = dist_bt_groups_filtered_2_matched, aes(x = Label, y = Distance, group=Trt1,),  se= T, method = "loess")
 
+ggplot(data = dist_bt_groups_filtered_2_matched) + geom_boxplot(mapping = aes(x = Trt1, y = Distance, fill = Trt1)) + facet_wrap(~Label) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  
+
+```
+
+```{r}
+#t3 to t4 comparison 
+dist_bt_groups_filtered_4 <- dist_bt_groups_filtered %>% filter(Label == "Between t3 and t4")
+
+
+#MATCH FIRST SAMPLE TO METADAT TO EXTRACT TREATMENT
+dist_bt_groups_filtered_4$Trt1 <- 'NA'
+for (i in 1:nrow(dist_bt_groups_filtered_4)){
+  for(j in 1:nrow(md_tab)){
+      if(dist_bt_groups_filtered_4[i,]$Item1==md_tab[j,]$sample.names){
+        dist_bt_groups_filtered_4[i,]$Trt1 <- as.character(md_tab[j,]$Treatment)
+      }
+    else{}
+  }
+}
+
+#MATCH SECOND SAMPLE TO METADAT TO EXTRACT TREATMENT
+dist_bt_groups_filtered_4$Trt2 <- 'NA'
+for (i in 1:nrow(dist_bt_groups_filtered_4)){
+  for(j in 1:nrow(md_tab)){
+      if(dist_bt_groups_filtered_4[i,]$Item2==md_tab[j,]$sample.names){
+        dist_bt_groups_filtered_4[i,]$Trt2 <- as.character(md_tab[j,]$Treatment)
+      }
+    else{}
+  }
+}
+
+
+#FILTER TO ONLY INCLUDE COMPARISONS WITHIN A TREATMENT GROUP
+dist_bt_groups_filtered_4_matched <- dist_bt_groups_filtered_4 %>% filter(Trt1 == Trt2)
+dist_bt_groups_filtered_4_matched$Treatment<-str_split(dist_bt_groups_filtered_4_matched$Trt2, "[[+]]", simplify = T)[,1]
+dist_bt_groups_filtered_4_matched$WheatM<-str_split(dist_bt_groups_filtered_4_matched$Trt2, "[[+]]", simplify = T)[,2]
+dist_bt_groups_filtered_4_matched$WheatM <- ifelse(dist_bt_groups_filtered_4_matched$WheatM == "W" | dist_bt_groups_filtered_4_matched$WheatM == "", "NOWM", dist_bt_groups_filtered_4_matched$WheatM)
+
+mod_distt3_t4<-aov(Distance ~ Treatment * WheatM, data = dist_bt_groups_filtered_4_matched)
+#no difference
+summary(mod_distt3_t4)
+TukeyHSD(mod_distt3_t4, "Treatment")
+
+ggplot(data = dist_bt_groups_filtered_4_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  
+
+```
 
 
 
+
+```{r}
+#to to t6 comparison 
 dist_bt_groups_filtered_3 <- dist_bt_groups_filtered %>% filter(Label == "Between t0 and t6")
 
 
@@ -1101,8 +1163,20 @@ for (i in 1:nrow(dist_bt_groups_filtered_3)){
 #FILTER TO ONLY INCLUDE COMPARISONS WITHIN A TREATMENT GROUP
 dist_bt_groups_filtered_3_matched <- dist_bt_groups_filtered_3 %>% filter(Trt1 == Trt2)
 
-ggplot(data = dist_bt_groups_filtered_3_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + facet_wrap(~Trt1) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  
+dist_bt_groups_filtered_3_matched$Treatment<-str_split(dist_bt_groups_filtered_3_matched$Trt2, "[[+]]", simplify = T)[,1]
+dist_bt_groups_filtered_3_matched$WheatM<-str_split(dist_bt_groups_filtered_3_matched$Trt2, "[[+]]", simplify = T)[,2]
+dist_bt_groups_filtered_3_matched$WheatM <- ifelse(dist_bt_groups_filtered_3_matched$WheatM == "W" | dist_bt_groups_filtered_3_matched$WheatM == "", "NOWM", dist_bt_groups_filtered_3_matched$WheatM)
+
+mod_distto_t6<-aov(Distance ~ Treatment * WheatM, data = dist_bt_groups_filtered_3_matched)
+#no difference
+summary(mod_distto_t6)
+TukeyHSD(mod_distto_t6, "Trt1")
+
+ggplot(data = dist_bt_groups_filtered_3_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  
+
 ```
+
+
 
 
 

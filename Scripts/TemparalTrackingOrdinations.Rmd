@@ -1,0 +1,135 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#ordinate 
+ord <- phyloseq::ordinate(ps16S_bac_rarefy_iter, method = "NMDS", distance = "bray", k =3)
+#plot ordiantion
+phyloseq::plot_ordination(physeq = ps16S_bac_rarefy_iter, ordination = ord)
+#extract axis scores 
+scrs<-vegan::scores(ord)$sites
+#add metadata columsn 
+scrs <- cbind(as.data.frame(scrs), Treatment = sample_data(ps16S_bac_rarefy_iter)$Treatment)
+scrs <- cbind(as.data.frame(scrs), Timepoint = sample_data(ps16S_bac_rarefy_iter)$Timepoint)
+#find centroid of treatments by treatment*Timepoint interaction
+cent <- aggregate(cbind(NMDS1, NMDS2) ~ Treatment * Timepoint, data = scrs, FUN = mean)
+#sort based on Treatment and Timepoint
+cent_sorted <- cent[order(cent$Treatment, cent$Timepoint), ]
+
+sample_data(ps16S_bac_rarefy_iter)$trt_tp <- paste(sample_data(ps16S_bac_rarefy_iter)$Treatment,sample_data(ps16S_bac_rarefy_iter)$Timepoint)
+physeq_dist<-parallelDist::parDist(as.matrix(data.frame(otu_table(ps16S_bac_rarefy_iter))), method = "bray")
+md_bd <- data.frame(sample_data(ps16S_bac_rarefy_iter))
+
+t<-vegan::betadisper(physeq_dist, group = c(md_bd$trt_tp))
+disp<-data.frame(t$group.distances)
+disp$Treatment_disp <- str_split(rownames(disp), pattern = " ", simplify = T) [,1]
+disp$Timepoint_disp <- str_split(rownames(disp), pattern = " ", simplify = T) [,2]
+
+cent_sorted<-cbind(cent_sorted, disp)
+cent_sorted$Treatment == cent_sorted$Treatment_disp
+cent_sorted$Timepoint == cent_sorted$Timepoint_disp
+
+```
+
+
+
+```{r}
+ggplot(cent_sorted, 
+       aes(
+          x = NMDS1, 
+          y = NMDS2, 
+          color = Treatment
+       )
+)  +
+   #facet_wrap(~Treatment, scales = "fixed") +
+   geom_path(aes(group = "all"), color = "grey") +
+   geom_point(aes(size=t.group.distances)) +
+    # geom_text(size = 5, color ="Black", aes(label = Timepoint), position = position_nudge(x = 0.01, y = 0.01)) + 
+  geom_text(size = 5, color ="Black", aes(label = Timepoint)) + 
+   labs(title = "Line Between Points of a Group") +
+   facet_wrap(~Treatment, scales = "free") +
+   theme_bw()  + 
+   # I hate that without this 
+   # The legend is little "a"s 
+   # because we're using geom_text
+   # We might not need this at all since the graphs are faceted?
+   guides(
+      color = guide_legend(
+         override.aes = aes(label = "")
+      )
+   )
+
+
+ggplot(cent_sorted, 
+       aes(
+          x = NMDS1, 
+          y = NMDS2, 
+          color = Treatment
+       )
+)  +
+   #facet_wrap(~Treatment, scales = "free") +
+   geom_path(aes(group = "all"), color = "grey") +
+   geom_text(size = 5, aes(label = Timepoint)) + 
+   geom_point() +
+   labs(title = "Line Between Points of a Group") +
+   facet_wrap(~Treatment, scales = "fixed") +
+   theme_bw()  + 
+   # I hate that without this 
+   # The legend is little "a"s 
+   # because we're using geom_text
+   # We might not need this at all since the graphs are faceted?
+   guides(
+      color = guide_legend(
+         override.aes = aes(label = "")
+      )
+   )
+```
+
+
+
+
+
+```{r}
+
+
+
+
+
+cent$Order <- as.integer(as.factor(cent$Timepoint))
+
+cent <- cent[order(cent$Timepoint),]
+
+ggplot(cent, aes(x = NMDS1, y=NMDS2, group = Treatment)) + geom_point(aes(color = Treatment, shape = Timepoint)) +scale_shape_manual(values=1:nlevels(scrs$Timepoint)) + geom_line() 
+
+ggplot(cent, aes(x = NMDS1, y = NMDS2, group = Treatment, color = Treatment, shape = Timepoint)) +
+  geom_line() + scale_shape_manual(values=1:nlevels(scrs$Timepoint))+
+  geom_point() +
+  labs(title = "Line Between Points of a Group") +
+  scale_x_continuous(breaks = seq(-0.4, 0.4, by = 0.1), minor_breaks = NULL)
+
+
+
+ggplot(cent, aes(x = NMDS1, y = NMDS2, group = Treatment, color = Treatment, shape = Timepoint)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Line Between Points of a Group") +
+  scale_x_continuous(breaks = seq(-0.4, 0.4, by = 0.1), minor_breaks = NULL) +
+  scale_shape_manual(values = 1:nlevels(cent$Timepoint))
+
+# Sorting the data by Treatment and Timepoint
+cent_sorted <- cent[order(cent$Treatment, cent$Timepoint),]
+cent_sorted$Timepoint2 <- as.numeric(gsub("t", "", cent_sorted$Timepoint))
+cent_sorted$NextTimepoint <- ave(cent_sorted$Timepoint2, cent_sorted$Treatment, FUN = function(x) c(tail(x, -1), NA))
+
+ggplot(cent_sorted, aes(x = NMDS1, y = NMDS2, group = Timepoint, color = Timepoint)) +
+  geom_line(aes(group = paste(Timepoint, NextTimepoint, sep = " to ")), na.rm = TRUE) +
+  geom_point() +
+  labs(title = "Line Between Points of a Group") +
+  scale_x_continuous(breaks = seq(-0.4, 0.4, by = 0.1), minor_breaks = NULL) +
+  facet_wrap(~Treatment, scales = "free") 
+
+```
+
+
