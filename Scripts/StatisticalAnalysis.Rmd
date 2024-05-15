@@ -301,12 +301,34 @@ alphadiv$pH <- sample_data(ps16S_bac_rarefy_iter)$pH
 
 plot(alphadiv$Shannon ~ alphadiv$wheatm)
 
+alphadiv$treatment <- factor(alphadiv$treatment, levels = c("F+W", "F+WM", "CC", "CC+WM", "Tr", "Tr+WM", "2spp", "2spp+WM"), ordered = T)
+
 ggplot(alphadiv) + geom_boxplot(aes(x = time, y = Observed, color = treatment, group = time)) + geom_smooth( data = alphadiv, aes(x=time, y = Observed, group = "treatment"), method = "lm", se = F) + facet_wrap("treatment")
 
 ggplot(alphadiv) + geom_boxplot(aes(x = time, y = Shannon, color = treatment, group = time)) + geom_smooth( data = alphadiv, aes(x=time, y = Shannon, group = "treatment"), method = "lm", se = F) + facet_wrap("treatment")
 
 ggplot(alphadiv) + geom_boxplot(aes(x = time, y = Simpson, color = treatment, group = time)) + geom_smooth( data = alphadiv, aes(x=time, y = Simpson, group = "treatment"), method = "lm", se = F) + facet_wrap("treatment")
 
+
+ggplot(alphadiv) + geom_boxplot(aes(x = time, y = Observed, color = treatment, group = time)) + facet_wrap("treatment", nrow = 2)
+ggplot(alphadiv) + geom_boxplot(aes(x = treatment, y = Observed, color = treatment)) + facet_wrap("time", nrow = 2)
+
+ggplot(alphadiv) + geom_boxplot(aes(x = time, y = Shannon, color = treatment, group = time))  + facet_wrap("treatment", nrow = 2)
+
+ggplot(alphadiv) + geom_boxplot(aes(x = time, y = Simpson, color = treatment, group = time)) + facet_wrap("treatment", nrow = 2)
+
+
+
+
+ggplot(alphadiv) + geom_boxplot(aes(x = time, y = Shannon, fill = treatment)) + ylim(4, 6) + theme_bw()
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/ShannonDiv.eps", device = "eps", width = 8, height = 6)
+ggplot(alphadiv) + geom_boxplot(aes(x = time, y = Observed, fill = treatment)) + theme_bw()
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/ObservedASVs.eps", device = "eps", width = 8, height = 6)
+
+#ggplot(alphadiv) + geom_boxplot(aes(x = treatment, y = Shannon, fill = time))+ ylim(4, 6)
+```
+
+```{r}
 
 #Shannon    
 res_aov <- alphadiv %>% anova_test(Shannon ~ covercrop + wheatm + time )
@@ -370,6 +392,7 @@ global
 com_ord <- ordinate(ps16S_bac_rarefy_iter, method = "NMDS", distance = "bray", k = 3)
 ord_plot<-plot_ordination(ps16S_bac_rarefy_iter, ordination = com_ord, type = "samples", axes = 1:2, color = "Treatment", shape = "Timepoint")
 
+
 com_df_nmds<-data.frame(com_ord$points)
 com_df_nmds$pH <- sample_data(ps16S_bac_rarefy_iter)$pH
 com_df_nmds$EC <- sample_data(ps16S_bac_rarefy_iter)$EC
@@ -381,7 +404,74 @@ com_df_nmds$wheatm <- sample_data(ps16S_bac_rarefy_iter)$WheatM
 com_df_nmds$time <- sample_data(ps16S_bac_rarefy_iter)$time
 #plot nmds 
 plot(com_df_nmds$MDS1 ~ com_df_nmds$pH)
-ggplot(com_df_nmds, aes(x = MDS1, y = pH, color = treatment, shape = timepoint, alpha = pH)) + geom_point(aes(size=7)) + theme_classic() 
+
+com_df_nmds$treatment <- factor(com_df_nmds$treatment, levels = c("F+W", "F+WM", "CC", "CC+WM", "Tr", "Tr+WM", "2spp", "2spp+WM"), ordered = T)
+
+ggplot(com_df_nmds, aes(x = MDS1, y = pH, color = treatment, shape = timepoint, alpha = pH)) + 
+  geom_point(size = 7) +  
+  geom_smooth(method = "lm", se = FALSE, aes(group = 1)) +  # Add trend line for all data
+  theme_classic() + 
+  scale_shape_manual(values = 1:nlevels(com_df_nmds$timepoint)) +
+  labs(x = "MDS1", y = "pH", alpha = "pH", color = "Treatment", shape = "Timepoint") +
+  ggtitle("Regression of pH vs. MDS1")  # Add title
+
+
+ggplot(com_df_nmds, aes(x = MDS1, y = pH)) + 
+  geom_point(size = 7) +  
+  geom_smooth(method = "lm", se = FALSE, aes(group = 1)) +  # Add trend line for all data
+  theme_classic() +
+  labs(x = "MDS1", y = "pH", alpha = "pH", color = "Treatment", shape = "Timepoint") +
+  ggtitle("Regression of pH vs. MDS1")  # Add title
+
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/ph_X_MDS1.eps", device = "eps", width = 8, height = 6)
+
+```
+
+```{r}
+
+#ggplot with com_df_nmds
+
+centroids_tp <- aggregate(cbind(MDS1,MDS2)~timepoint, com_df_nmds, mean)
+centroids_trt <- aggregate(cbind(MDS1,MDS2)~treatment, com_df_nmds, mean)
+centroids_trt_tp <- aggregate(cbind(MDS1,MDS2)~treatment*timepoint, com_df_nmds, mean)
+##Choose either 95% CI or SE
+#f <- function(z) qt(0.025,df=length(z)-1, lower.tail=F)* sd(z)/sqrt(length(z) #SE
+f <- function(z) qt(0.025,df=length(z)-1, lower.tail=F)* sd(z)/sqrt(length(z)) #calculate 95% CI
+se_trt        <- aggregate(cbind(se.x=MDS1,se.y=MDS2) ~ treatment, com_df_nmds,f)
+se_trt_tp        <- aggregate(cbind(se.x=MDS1,se.y=MDS2) ~ treatment*timepoint, com_df_nmds,f)
+centroids_trt <- merge(centroids_trt, se_trt, by="treatment") 
+
+
+centroids_trt_tp <- merge(centroids_trt_tp, se_trt_tp) 
+
+
+
+#TRT AND TP
+ggplot(com_df_nmds, aes(MDS1, MDS2, color = as.factor(treatment), shape = timepoint)) +
+  geom_point(size=1) + geom_point(data=centroids_trt_tp,size=7, aes(shape = timepoint))+ 
+  scale_shape_manual(values = 1:nlevels(centroids_trt_tp$timepoint)) + theme_bw() + ylim(-1,1)
+
+#TRT
+ggplot(com_df_nmds, aes(MDS1,MDS2, color = as.factor(treatment))) +
+  geom_point(size=1) + geom_point(data=centroids_trt,size=7) + theme_bw() + ylim(-1,1) +
+  geom_errorbar(data=centroids_trt,aes(ymin=MDS2-se.y,ymax=MDS2+se.y),width=0.1)+
+  geom_errorbarh(data=centroids_trt,aes(xmin=MDS1-se.x,xmax=MDS1+se.x),height=0.1)
+
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/Treatment_Ord.eps", device = "eps", width = 8, height = 6)
+
+```
+
+```{r}
+
+
+
+
+sample_data(ps16S_bac_rarefy_iter)$Treatment<- factor(sample_data(ps16S_bac_rarefy_iter)$Treatment, levels = c("F+W", "F+WM", "CC", "CC+WM", "Tr", "Tr+WM", "2spp", "2spp+WM"), ordered = T)
+ord_plot + theme_bw() + 
+  scale_shape_manual(values = 1:nlevels(sample_data(ps16S_bac_rarefy_iter)$Timepoint)) 
+
+
+
 
 
 #axis 1 with pH
@@ -390,12 +480,30 @@ hist(residuals(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH)))
 #looks normal enough, but just in case heres a non-parametric regression
 summary(lm(MDS1 ~ pH, data = com_df_nmds))
 #summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH, dataframe = com_df_nmds))
+
+#EC
+ggplot(com_df_nmds, aes(x = MDS1, y = EC)) + 
+  geom_point(size = 7) +  
+  geom_smooth(method = "lm", se = FALSE, aes(group = 1)) +  # Add trend line for all data
+  theme_classic() +
+  labs(x = "MDS1", y = "EC", alpha = "EC", color = "Treatment", shape = "Timepoint") +
+  ggtitle("Regression of EC vs. MDS1") + ylim(0, 0.5) # Add title
+
+
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/EC_X_MDS1.eps", device = "eps", width = 8, height = 6)
+
+#axis 1 with pH
+summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$EC))
+hist(residuals(lm(com_df_nmds$MDS1 ~ com_df_nmds$EC)))
+#looks normal enough, but just in case heres a non-parametric regression
+summary(lm(MDS1 ~ EC, data = com_df_nmds))
+#summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH, dataframe = com_df_nmds))
 ```
 
 ```{r}
 
-com_ord <- ordinate(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t0"), method = "NMDS", distance = "bray", k = 3)
-ord_plot<-plot_ordination(ps16S_bac_rarefy_iter, ordination = com_ord, type = "samples", axes = 1:2, color = "Treatment", shape = "Timepoint")
+#com_ord <- ordinate(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t0"), method = "NMDS", distance = "bray", k = 3)
+#ord_plot<-plot_ordination(ps16S_bac_rarefy_iter, ordination = com_ord, type = "samples", axes = 1:2, color = "Treatment", shape = "Timepoint")
 
 
 ps_adonis<-function(physeq){
@@ -1076,8 +1184,12 @@ dist_bt_groups_filtered_2_matched$WheatM <- ifelse(dist_bt_groups_filtered_2_mat
 mod_distbtpts<-aov(Distance ~ Treatment * WheatM + Label, data = dist_bt_groups_filtered_2_matched)
 #no difference
 summary(mod_distbtpts)
-TukeyHSD(mod_distbtpts, "Trt1")
+hist(mod$residuals)
+TukeyHSD(mod_distbtpts, "Treatment")
+plot(TukeyHSD(mod_distbtpts, "Treatment"))
 
+TukeyHSD(mod_distbtpts, "WheatM")
+plot(TukeyHSD(mod_distbtpts, "WheatM"))
 
 
 ggplot(data = dist_bt_groups_filtered_2_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + facet_wrap(~Trt1) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  + geom_smooth(data = dist_bt_groups_filtered_2_matched, aes(x = Label, y = Distance, group=Trt1,),  se= T, method = "loess")
@@ -1124,6 +1236,7 @@ mod_distt3_t4<-aov(Distance ~ Treatment * WheatM, data = dist_bt_groups_filtered
 #no difference
 summary(mod_distt3_t4)
 TukeyHSD(mod_distt3_t4, "Treatment")
+TukeyHSD(mod_distt3_t4, "WheatM")
 
 ggplot(data = dist_bt_groups_filtered_4_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  
 
@@ -1170,11 +1283,266 @@ dist_bt_groups_filtered_3_matched$WheatM <- ifelse(dist_bt_groups_filtered_3_mat
 mod_distto_t6<-aov(Distance ~ Treatment * WheatM, data = dist_bt_groups_filtered_3_matched)
 #no difference
 summary(mod_distto_t6)
-TukeyHSD(mod_distto_t6, "Trt1")
+plot(TukeyHSD(mod_distto_t6, "Treatment"))
+plot(TukeyHSD(mod_distto_t6, "WheatM"))
 
 ggplot(data = dist_bt_groups_filtered_3_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  
 
 ```
+
+
+
+
+```{r}
+sample_data(ps16S_bac_rarefy_iter)$tp_trt <- paste(sample_data(ps16S_bac_rarefy_iter)$Timepoint, sample_data(ps16S_bac_rarefy_iter)$Treatment, sep = "_")
+
+SD <- merge_samples(ps16S_bac_rarefy_iter, "trt_tp")
+sd <- transform_sample_counts(SD, function(x) x / sum(x))
+sample_data(sd)$trt_tp <- rownames(sample_data(sd))
+
+phyloseq::plot_bar(sd, x = "trt_tp", fill = "Class") + geom_bar(stat="identity") + scale_fill_manual(values = col_vector)
+
+
+sample_data(ps16S_bac_rarefy_iter)$trt_tp <- paste( sample_data(ps16S_bac_rarefy_iter)$Treatment, sample_data(ps16S_bac_rarefy_iter)$Timepoint, sep = "_")
+
+SD <- merge_samples(ps16S_bac_rarefy_iter, "trt_tp")
+sd <- transform_sample_counts(SD, function(x) x / sum(x))
+sample_data(sd)$trt_tp <- rownames(sample_data(sd))
+
+phyloseq::plot_bar(sd, x = "tp_trt", fill = "Class") + geom_bar(stat="identity") + scale_fill_manual(values = col_vector)
+
+```
+
+```{r}
+library(randomForest)
+library(Boruta)
+library(phyloseq)
+library(stats)
+library(dplyr)
+library(readr)
+library(pheatmap)
+library(tidyverse)
+
+baruta_phyloseq<-function(physeq = "Phyloseq object", GroupingVar = "Grouping variable"){
+  #prep data
+  df <- data.frame(otu_table(physeq))
+  md <- data.frame(sample_data(physeq))
+  tax <- data.frame(tax_table(physeq))
+  rownames(tax)<-str_replace(rownames(tax), pattern = "[[.]]", replacement = "=")
+  #run simper
+ 
+                  boruta_layer <- Boruta(df , factor(md[,GroupingVar]), 
+                      doTrace = 1, ntree = 1000, maxRuns = 1000) # adjust factor!!!!
+
+                  B1 <- data.frame(boruta_layer$finalDecision)  
+                  B2 <- data.frame(apply(boruta_layer$ImpHistory, 2, mean))
+                  names(B1) <- "Layer_decision"
+                  names(B2) <- "Layer_importance"
+                  BB1 <- merge(B1, B2, by="row.names", all.x=TRUE)
+                  #sorting the results
+                  BB1_sort <- BB1[order(BB1$Layer_importance, decreasing = TRUE),] ## this is to give an overwiew and choose cutoff
+                  #picking up important with cutoff
+                  BB1_sort_cutoff <- filter(BB1, Layer_importance >= 2) ## number is your importance cutoff
+
+                        #picking up OTUs from full otutable
+                        signOTU <- as.matrix(BB1_sort_cutoff$Row.names) #vector with OTUs
+                        signOTU<-str_replace(signOTU, pattern = "[[.]]", replacement = ".")
+                        #my_taxa
+                        tax$OTU <-rownames(tax)
+                        signOTU<-str_replace(signOTU, pattern = "[[.]]", replacement = "=")
+                        signmy_taxa <- filter(tax, OTU %in% signOTU) 
+                        signmy_taxa <- as.data.frame(signmy_taxa)
+                        taxa_keep<-signmy_taxa$OTU
+return(taxa_keep)
+}
+
+```
+
+
+```{r}
+sample_data(ps16S_bac_rarefy_iter)$trt_tp <- paste( sample_data(ps16S_bac_rarefy_iter)$Treatment, sample_data(ps16S_bac_rarefy_iter)$Timepoint, sep = "_")
+sample_data(ps16S_bac_rarefy_iter)$tp_trt <- paste(sample_data(ps16S_bac_rarefy_iter)$Timepoint, sample_data(ps16S_bac_rarefy_iter)$Treatment, sep = "_")
+
+
+
+#baruta_taxa<-baruta_phyloseq(ps16S_bac_rarefy_iter, GroupingVar = "Timepoint")
+
+#ps_baruta_time <- subset_taxa(ps16S_bac_rarefy_iter, taxa_names(ps16S_bac_rarefy_iter) %in% baruta_taxa)
+
+#phyloseq::plot_bar(ps_baruta_time, x = "trt_tp", fill = "Order") + geom_bar(stat="identity") + scale_fill_manual(values = col_vector)
+#phyloseq::plot_bar(ps_baruta_time, x = "tp_trt", fill = "Order") + geom_bar(stat="identity") + scale_fill_manual(values = col_vector)
+
+
+#ps_baruta_time_merged <- merge_samples(ps_baruta_time, "tp_trt")
+#sample_data(ps_baruta_time_merged)$tp_trt <- rownames(sample_data(ps_baruta_time_merged))
+#plot_heatmap(ps_baruta_time_merged, sample.label="tp_trt", taxa.label = "Family")
+
+#ps_baruta_time_merged <- merge_samples(ps_baruta_time, "trt_tp")
+#sample_data(ps_baruta_time_merged)$trt_tp <- rownames(sample_data(ps_baruta_time_merged))
+#plot_heatmap(ps_baruta_time_merged, sample.label="trt_tp", taxa.label = "Family")
+
+
+###GENUS
+ps_genus<-tax_glom(ps16S_bac_rarefy_iter,taxrank = "Genus")
+#ps_genus <- subset_samples(ps_genus, Timepoint != "t0" & Timepoint != "t6")
+table(sample_data(ps_genus)$Timepoint)
+baruta_taxa_genus<-baruta_phyloseq(ps_genus, GroupingVar = "Timepoint")
+ps_baruta_time_genus <- subset_taxa(ps_genus, taxa_names(ps_genus) %in% baruta_taxa_genus)
+
+#phyloseq::plot_bar(ps_baruta_time_genus, x = "trt_tp", fill = "Order") + geom_bar(stat="identity") + scale_fill_manual(values = col_vector)
+
+#phyloseq::plot_bar(ps_baruta_time_genus, x = "tp_trt", fill = "Order") + geom_bar(stat="identity") + scale_fill_manual(values = col_vector)
+
+
+ps_baruta_time_merged_genus <- merge_samples(ps_baruta_time_genus, "tp_trt")
+
+sample_data(ps_baruta_time_merged_genus)$tp_trt <- rownames(sample_data(ps_baruta_time_merged_genus))
+
+#sample_data(ps_baruta_time_merged_genus)$trt_tp <- rownames(sample_data(ps_baruta_time_merged_genus))
+
+#phyloseq::plot_heatmap(ps_baruta_time_merged_genus, sample.label="tp_trt", taxa.label = "Genus", sample.order = "tp_trt")+ theme (axis.text.y = element_text(size=12))+ theme (axis.text.x = element_text(size=12))
+
+
+map<-phyloseq::plot_heatmap(ps_baruta_time_merged_genus, sample.label="tp_trt", taxa.label = "Family", sample.order = "trt_tp", high = "red", low = "blue") + theme (axis.text.y = element_text(size=12))+ theme (axis.text.x = element_text(size=12)) 
+y_order <- ggplot_build(map)$layout$panel_params[[1]]$y.sec$breaks
+
+#phyloseq::plot_heatmap(ps_baruta_time_merged_genus, sample.label="tp_trt", taxa.label = "Phylum", sample.order = "tp_trt") + theme (axis.text.y = element_text(size=12))+ theme (axis.text.x = element_text(size=12))
+
+
+#ps_baruta_time_merged_genus <- merge_samples(ps_baruta_time, "trt_tp")
+#sample_data(ps_baruta_time_merged_genus)$trt_tp <- rownames(sample_data(ps_baruta_time_merged_genus))
+#phyloseq::plot_heatmap(ps_baruta_time_merged_genus, sample.label="trt_tp", taxa.label = "Genus")
+
+
+
+
+```
+
+zscore heatmap by timepoint indicators
+```{r}
+ps_genus<-tax_glom(ps16S_bac_rarefy_iter,taxrank = "Genus")
+#ps_genus <- subset_samples(ps_genus, Timepoint != "t0" & Timepoint != "t6")
+table(sample_data(ps_genus)$Timepoint)
+baruta_taxa_genus<-baruta_phyloseq(ps_genus, GroupingVar = "Timepoint")
+ps_baruta_time_genus <- subset_taxa(ps_genus, taxa_names(ps_genus) %in% baruta_taxa_genus)
+
+#phyloseq::plot_bar(ps_baruta_time_genus, x = "trt_tp", fill = "Order") + geom_bar(stat="identity") + scale_fill_manual(values = col_vector)
+
+#phyloseq::plot_bar(ps_baruta_time_genus, x = "tp_trt", fill = "Order") + geom_bar(stat="identity") + scale_fill_manual(values = col_vector)
+
+
+ps_baruta_time_merged_genus <- merge_samples(ps_baruta_time_genus, "tp_trt")
+
+sample_data(ps_baruta_time_merged_genus)$tp_trt <- rownames(sample_data(ps_baruta_time_merged_genus))
+
+#sample_data(ps_baruta_time_merged_genus)$trt_tp <- rownames(sample_data(ps_baruta_time_merged_genus))
+
+#phyloseq::plot_heatmap(ps_baruta_time_merged_genus, sample.label="tp_trt", taxa.label = "Genus", sample.order = "tp_trt")+ theme (axis.text.y = element_text(size=12))+ theme (axis.text.x = element_text(size=12))
+
+
+map<-phyloseq::plot_heatmap(ps_baruta_time_merged_genus, sample.label="tp_trt", taxa.label = "Family", sample.order = "trt_tp", high = "red", low = "blue") + theme (axis.text.y = element_text(size=12))+ theme (axis.text.x = element_text(size=12)) 
+y_order <- ggplot_build(map)$layout$panel_params[[1]]$y.sec$breaks
+
+
+df_counts<-otu_table(ps_baruta_time_merged_genus)
+colSums(df_counts)
+
+
+filt_zscore_ps <- filter_taxa(ps_baruta_time_merged_genus, function(x) sum(x) > 1000, TRUE)
+
+z_ps_baruta_time_merged_genus <- microbiome::transform(filt_zscore_ps, transform = "Z", target = "OTU")
+
+otu_df <- data.frame(otu_table(z_ps_baruta_time_merged_genus))
+otu_df$trt_tp <- rownames(sample_data(z_ps_baruta_time_merged_genus))
+otu_df$tp <- str_split(otu_df$trt_tp, pattern = "_", simplify = T)[,1]
+otu_df$trt <- str_split(otu_df$trt_tp, pattern = "_", simplify = T)[,2]
+otu_df$tp_trt <- paste(otu_df$tp, otu_df$trt, sep = "_")
+
+data_long <- gather(otu_df, key = "ASV", value = "value", - tp_trt)
+data_long2<-data_long
+data_long2$ASV <- factor(data_long2$ASV, levels = y_order)
+data_long2$value<-as.numeric(data_long2$value)
+
+str(data_long2)
+
+colors <- c("deepskyblue3", "bisque", "coral3")
+
+library(viridis)
+ggplot(data_long2, aes(x = tp_trt, y = ASV , fill = value)) +
+  geom_tile() +
+  #scale_fill_viridis(option = "plasma") +
+scale_fill_gradientn(colors = colors)+
+  labs(title = "Heatmap of Data",
+       x = "Treatment",
+       y = "ASV")+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/Timepoint_indicators_heatmap.eps", device = "eps", width = 8, height = 6)
+```
+
+
+
+
+zscore heatmap by treatment indicators - no t0 or t6
+```{r}
+ps_genus<-tax_glom(ps16S_bac_rarefy_iter,taxrank = "Genus")
+#ps_genus <- subset_samples(ps_genus, Timepoint != "t0" & Timepoint != "t6")
+table(sample_data(ps_genus)$Timepoint)
+baruta_taxa_genus<-baruta_phyloseq(ps_genus, GroupingVar = "Treatment")
+ps_baruta_time_genus <- subset_taxa(ps_genus, taxa_names(ps_genus) %in% baruta_taxa_genus)
+
+
+ps_baruta_time_merged_genus <- merge_samples(ps_baruta_time_genus, "trt_tp")
+
+sample_data(ps_baruta_time_merged_genus)$trt_tp <- rownames(sample_data(ps_baruta_time_merged_genus))
+
+#sample_data(ps_baruta_time_merged_genus)$trt_tp <- rownames(sample_data(ps_baruta_time_merged_genus))
+
+#phyloseq::plot_heatmap(ps_baruta_time_merged_genus, sample.label="tp_trt", taxa.label = "Genus", sample.order = "tp_trt")+ theme (axis.text.y = element_text(size=12))+ theme (axis.text.x = element_text(size=12))
+
+
+map<-phyloseq::plot_heatmap(ps_baruta_time_merged_genus, sample.label="trt_tp", taxa.label = "Family", sample.order = "trt_tp", high = "red", low = "blue") + theme (axis.text.y = element_text(size=12))+ theme (axis.text.x = element_text(size=12)) 
+y_order <- ggplot_build(map)$layout$panel_params[[1]]$y.sec$breaks
+
+
+df_counts<-otu_table(ps_baruta_time_merged_genus)
+colSums(df_counts)
+
+
+filt_zscore_ps <- filter_taxa(ps_baruta_time_merged_genus, function(x) sum(x) > 1000, TRUE)
+
+z_ps_baruta_time_merged_genus <- microbiome::transform(filt_zscore_ps, transform = "Z", target = "OTU")
+
+otu_df <- data.frame(otu_table(z_ps_baruta_time_merged_genus))
+otu_df$trt_tp <- rownames(sample_data(z_ps_baruta_time_merged_genus))
+otu_df$tp <- str_split(otu_df$trt_tp, pattern = "_", simplify = T)[,2]
+otu_df$trt <- str_split(otu_df$trt_tp, pattern = "_", simplify = T)[,2]
+otu_df$tp_trt <- paste(otu_df$tp, otu_df$trt, sep = "_")
+
+data_long <- gather(otu_df, key = "ASV", value = "value", - trt_tp)
+data_long2<-data_long
+data_long2$ASV <- factor(data_long2$ASV, levels = y_order)
+data_long2$value<-as.numeric(data_long2$value)
+
+
+str(data_long2)
+
+colors <- c("deepskyblue3", "bisque", "coral3")
+
+library(viridis)
+ggplot(data_long2, aes(x = trt_tp, y = ASV , fill = value)) +
+  geom_tile() +
+  #scale_fill_viridis(option = "plasma") +
+scale_fill_gradientn(colors = colors)+
+  labs(title = "Heatmap of Data",
+       x = "Treatment",
+       y = "ASV")+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/Treatment_indicators_heatmap.eps", device = "eps", width = 8, height = 6)
+```
+
+
+
+
 
 
 
@@ -1407,6 +1775,8 @@ hist(residuals(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH)))
 summary(mblm(MDS1 ~ pH, dataframe = com_df_nmds))
 #summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH, dataframe = com_df_nmds))
 ```
+
+
 global adonis testing
 ```{r}
 ps_adonis<-function(physeq){

@@ -7,7 +7,26 @@ output: html_notebook
 #ordinate 
 ord <- phyloseq::ordinate(ps16S_bac_rarefy_iter, method = "NMDS", distance = "bray", k =3)
 #plot ordiantion
-phyloseq::plot_ordination(physeq = ps16S_bac_rarefy_iter, ordination = ord)
+phyloseq::plot_ordination(physeq = ps16S_bac_rarefy_iter, ordination = ord) + facet_wrap(~ Timepoint, scales = "free") + geom_point(aes(color = Treatment)) +  theme_bw()  
+
+phyloseq::plot_ordination(physeq = ps16S_bac_rarefy_iter, ordination = ord,) + facet_wrap(~ Treatment, scales = "free", nrow = 2, ncol = 4) + geom_point(aes(color = Timepoint)) +    theme_bw()  
+
+
+#plot ordiantion
+#phyloseq::plot_ordination(physeq = ps16S_bac_rarefy_iter, ordination = ord) + facet_wrap(~ Timepoint, scales = "free") + geom_point(aes(color = Treatment)) +  theme_bw()  
+allGroupsColors<- c("grey0", "gray12", "grey24", "grey36", "grey48", "grey60", "grey72", "gray84")
+
+allGroupsColors<- c("#084594", "#2171b5", "#4292c6", "#6baed6", "#9ecae1", "#c6dbef", "#deebf7", "#f7fbff")
+
+ord <- phyloseq::ordinate(ps16S_bac_rarefy_iter, method = "CAP", formula = ~Timepoint + Treatment)
+phyloseq::plot_ordination(physeq = ps16S_bac_rarefy_iter, ordination = ord, color = "Timepoint") + facet_wrap(~ Treatment, scales = "free", nrow = 2, ncol = 4)  +    theme_bw()  +   scale_color_manual(values = rev(allGroupsColors))
+
+phyloseq::plot_ordination(physeq = ps16S_bac_rarefy_iter, ordination = ord, color = "Treatment") + facet_wrap(~ Timepoint, scales = "free", nrow = 2, ncol = 4)  +    theme_bw() 
+
+
+
+
+
 #extract axis scores 
 scrs<-vegan::scores(ord)$sites
 #add metadata columsn 
@@ -31,11 +50,29 @@ cent_sorted<-cbind(cent_sorted, disp)
 cent_sorted$Treatment == cent_sorted$Treatment_disp
 cent_sorted$Timepoint == cent_sorted$Timepoint_disp
 
+
+
+
+#append values to scrs df
+cent_sorted$trt_tp <- paste(cent_sorted$Treatment, cent_sorted$Timepoint, sep = "_")
+scrs$trt_tp <- paste(scrs$Treatment, scrs$Timepoint, sep = "_")
+joined_Df<-full_join(scrs, cent_sorted, "trt_tp")
+
+names(joined_Df) <- c( "NMDS1", "NMDS2", "NMDS3", "Treatment.x","Timepoint.x", "trt_tp",  "Treatment.y", "Timepoint.y", "NMDS1_cent", "NMDS2_cent", "group_dispersion", "Treatment_disp", "Timepoint_disp")
+
+View(joined_Df)
+
+
+#write_csv(cent_sorted, "/Users/gordoncuster/Desktop/Git_projects/ASD/Data/cent_sorted.csv")
+#write_csv(scrs, "/Users/gordoncuster/Desktop/Git_projects/ASD/Data/scrs.csv")
+
 ```
 
 
 
 ```{r}
+cent_sorted$Treatment <- factor(cent_sorted$Treatment, levels = c("F+W", "F+WM", "CC", "CC+WM", "Tr", "Tr+WM", "2spp", "2spp+WM"), ordered = T)
+
 ggplot(cent_sorted, 
        aes(
           x = NMDS1, 
@@ -44,12 +81,12 @@ ggplot(cent_sorted,
        )
 )  +
    #facet_wrap(~Treatment, scales = "fixed") +
-   geom_path(aes(group = "all"), color = "grey") +
+   geom_path(aes(group = "all",), color = "grey") +
    geom_point(aes(size=t.group.distances)) +
     # geom_text(size = 5, color ="Black", aes(label = Timepoint), position = position_nudge(x = 0.01, y = 0.01)) + 
-  geom_text(size = 5, color ="Black", aes(label = Timepoint)) + 
-   labs(title = "Line Between Points of a Group") +
-   facet_wrap(~Treatment, scales = "free") +
+  geom_text(size = 5, color ="black", aes(label = Timepoint)) + 
+   #labs(title = ) +
+  facet_wrap(~Treatment, scales = "free", nrow = 2, ncol = 4) +
    theme_bw()  + 
    # I hate that without this 
    # The legend is little "a"s 
@@ -61,20 +98,24 @@ ggplot(cent_sorted,
       )
    )
 
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/temporal_tracking_centroids.esp", device = "eps", width = 8, height = 6)
 
-ggplot(cent_sorted, 
+ggplot(joined_Df, 
        aes(
-          x = NMDS1, 
-          y = NMDS2, 
-          color = Treatment
+          x = NMDS1_cent, 
+          y = NMDS2_cent, 
+          color = Treatment.x
        )
 )  +
-   #facet_wrap(~Treatment, scales = "free") +
-   geom_path(aes(group = "all"), color = "grey") +
-   geom_text(size = 5, aes(label = Timepoint)) + 
-   geom_point() +
-   labs(title = "Line Between Points of a Group") +
-   facet_wrap(~Treatment, scales = "fixed") +
+   #facet_wrap(~Treatment, scales = "fixed") +
+   geom_path(aes(group = "all",), color = "grey") +
+   geom_point(aes(size=group_dispersion)) +
+    geom_point(aes(x = NMDS1, y = NMDS2, shape = Timepoint.x), alpha = 0.5) + 
+  scale_shape_manual(values=1:nlevels(joined_Df$Timepoint.x)) +
+    # geom_text(size = 5, color ="Black", aes(label = Timepoint), position = position_nudge(x = 0.01, y = 0.01)) + 
+  geom_text(size = 5, color ="grey60", aes(label = Timepoint.x)) + 
+   #labs(title = ) +
+  facet_wrap(~Treatment.x, scales = "free", nrow = 2, ncol = 4) +
    theme_bw()  + 
    # I hate that without this 
    # The legend is little "a"s 
@@ -85,6 +126,12 @@ ggplot(cent_sorted,
          override.aes = aes(label = "")
       )
    )
+
+
+
+
+
+
 ```
 
 
