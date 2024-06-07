@@ -9,6 +9,7 @@ require(ggplot2)
 require(tidyverse)
 require(rstatix)
 require(ggpubr)
+require(psych)
 ```
 
 
@@ -113,7 +114,7 @@ boxplot(md$pH ~ md$Covercrop)
 boxplot(md$pH ~ md$Timepoint)
 plot(TukeyHSD(mod, "WheatM"))
 
-res_aov <- md %>% anova_test(pH ~ Covercrop + Timepoint + WheatM)
+res_aov <- md %>% anova_test(pH ~ Covercrop *  WheatM + Timepoint )
 print(res_aov)
 
       
@@ -135,7 +136,7 @@ boxplot(md$EC ~ md$Covercrop)
 boxplot(md$EC ~ md$Timepoint)
 
 
-res_aov <- md_sub %>% anova_test(EC ~ Covercrop + Timepoint + WheatM)
+res_aov <- md_sub %>% anova_test(EC ~ Covercrop *  WheatM + Timepoint)
 print(res_aov)
 
       
@@ -153,8 +154,7 @@ md_sub <- md %>% filter(sample.names != "asd-t1-a-102-tr")
 md_sub <- md_sub %>% filter(sample.names != "asd-t3-a-301-asd")
 md_sub <- md_sub %>% filter(sample.names != "asd-t3-a-201-2sppb")
 md_sub <- md_sub %>% filter(sample.names != "asd-t1-a-103-cc")
-md_sub_n <- md_sub %>% filter(Timepoint!= "t0")
-md_sub_n <- md_sub_n %>% filter(NitrateNperkgDrySoil > 0)
+md_sub_n <- md_sub %>% filter(NitrateNperkgDrySoil > 0)
 min(md_sub_n$NitrateNperkgDrySoil)
 
 #check residauls
@@ -169,7 +169,7 @@ boxplot(log(md_sub_n$NitrateN) ~ md_sub_n$Covercrop)
 boxplot(md_sub_n$NitrateNperkgDrySoil ~ md_sub_n$Covercrop)
 boxplot(log(md_sub_n$NitrateNperkgDrySoil) ~ md_sub_n$Timepoint)
 
-res_aov <- md_sub_n %>% anova_test(log(NitrateNperkgDrySoil) ~ Covercrop + Timepoint + WheatM)
+res_aov <- md_sub_n %>% anova_test(log(NitrateNperkgDrySoil) ~ Covercrop *  WheatM + Timepoint)
 print(res_aov)
 
 
@@ -199,7 +199,7 @@ boxplot(md$NH4NperkgDrySoil ~ md$Covercrop)
 boxplot(md$NH4NperkgDrySoil ~ md$Timepoint)
 
 
-res_aov <- md %>% anova_test(log(NH4NperkgDrySoil) ~ Covercrop + Timepoint + WheatM)
+res_aov <- md %>% anova_test(log(NH4NperkgDrySoil) ~ Covercrop *  WheatM + Timepoint)
 print(res_aov)
 
       
@@ -289,6 +289,24 @@ res_tukey <- md %>% tukey_hsd(formula = log(NH4NperkgDrySoil) ~ Timepoint)
 print(res_tukey[res_tukey$p.adj<0.06,])
 ```
 
+calculate summary stats in table
+```{r}
+md<-data.frame(sample_data(ps16S_bac_rarefy_iter))
+
+#md %>% filter(Timepoint == "t0") %>%
+ summ_phyico <- md %>%
+  group_by(Timepoint, Treatment) %>%
+ summarize(
+    across(c(pH, EC, NitrateNperkgDrySoil, NH4NperkgDrySoil), list(mean = ~ round(mean(.x, na.rm = TRUE), 3), sd = ~ round(sd(.x, na.rm = TRUE), 3)), .names = "{.col}_{.fn}")
+  )
+  
+
+View(summ_phyico)
+
+
+```
+
+
 
 Alpha diversity over time 
 ```{r}
@@ -298,6 +316,13 @@ alphadiv$covercrop <- sample_data(ps16S_bac_rarefy_iter)$Covercrop
 alphadiv$time <- as.factor(sample_data(ps16S_bac_rarefy_iter)$time)
 alphadiv$wheatm <- sample_data(ps16S_bac_rarefy_iter)$WheatM
 alphadiv$pH <- sample_data(ps16S_bac_rarefy_iter)$pH
+
+#caluclate summary stats
+summ_alpha<- alphadiv %>%
+ group_by(time, treatment) %>%
+ summarize(
+    across(c(Observed, Shannon, Chao1), list(mean = ~ round(mean(.x, na.rm = TRUE), 3), sd = ~ round(sd(.x, na.rm = TRUE), 3)), .names = "{.col}_{.fn}")
+  )
 
 plot(alphadiv$Shannon ~ alphadiv$wheatm)
 
@@ -331,14 +356,14 @@ ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/ObservedASVs
 ```{r}
 
 #Shannon    
-res_aov <- alphadiv %>% anova_test(Shannon ~ covercrop + wheatm + time )
+res_aov <- alphadiv %>% anova_test(Shannon ~ covercrop * wheatm + time )
     print(res_aov)
 res_tukey <- alphadiv %>% tukey_hsd(formula = Shannon ~ time)
           print(res_tukey)    
       plot(alphadiv$Shannon ~ alphadiv$time)    
     
 #observed
-res_aov <- alphadiv %>% anova_test(Observed ~ covercrop + wheatm + time )
+res_aov <- alphadiv %>% anova_test(Observed ~ covercrop * wheatm + time )
     print(res_aov)
     
   res_tukey <- alphadiv %>% tukey_hsd(formula = Observed ~ time)
@@ -391,6 +416,8 @@ global
 
 com_ord <- ordinate(ps16S_bac_rarefy_iter, method = "NMDS", distance = "bray", k = 3)
 ord_plot<-plot_ordination(ps16S_bac_rarefy_iter, ordination = com_ord, type = "samples", axes = 1:2, color = "Treatment", shape = "Timepoint")
+
+
 
 
 com_df_nmds<-data.frame(com_ord$points)
@@ -1452,6 +1479,14 @@ filt_zscore_ps <- filter_taxa(ps_baruta_time_merged_genus, function(x) sum(x) > 
 
 z_ps_baruta_time_merged_genus <- microbiome::transform(filt_zscore_ps, transform = "Z", target = "OTU")
 
+tax_z_ps_baruta_time_merged_genus<-data.frame(tax_table(z_ps_baruta_time_merged_genus))
+tax_z_ps_baruta_time_merged_genus <- tax_z_ps_baruta_time_merged_genus[match(y_order, rownames(tax_z_ps_baruta_time_merged_genus)), ]
+write.csv(tax_z_ps_baruta_time_merged_genus, "/Users/gordoncuster/Desktop/Git_projects/ASD/Results/timepoint_indicators_taxonomy_ordered.csv")
+
+
+reversed_df <- tax_z_ps_baruta_time_merged_genus[nrow(tax_z_ps_baruta_time_merged_genus):1, ]
+write.csv(reversed_df, "/Users/gordoncuster/Desktop/Git_projects/ASD/Results/timepoint_indicators_taxonomy_ordered_flipped.csv")
+
 otu_df <- data.frame(otu_table(z_ps_baruta_time_merged_genus))
 otu_df$trt_tp <- rownames(sample_data(z_ps_baruta_time_merged_genus))
 otu_df$tp <- str_split(otu_df$trt_tp, pattern = "_", simplify = T)[,1]
@@ -1476,7 +1511,7 @@ scale_fill_gradientn(colors = colors)+
        x = "Treatment",
        y = "ASV")+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/Timepoint_indicators_heatmap.eps", device = "eps", width = 8, height = 6)
+#ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/Timepoint_indicators_heatmap.eps", device = "eps", width = 8, height = 6)
 ```
 
 
@@ -1512,6 +1547,13 @@ filt_zscore_ps <- filter_taxa(ps_baruta_time_merged_genus, function(x) sum(x) > 
 
 z_ps_baruta_time_merged_genus <- microbiome::transform(filt_zscore_ps, transform = "Z", target = "OTU")
 
+tax_z_ps_baruta_time_merged_genus<-data.frame(tax_table(z_ps_baruta_time_merged_genus))
+tax_z_ps_baruta_time_merged_genus <- tax_z_ps_baruta_time_merged_genus[match(y_order, rownames(tax_z_ps_baruta_time_merged_genus)), ]
+write.csv(tax_z_ps_baruta_time_merged_genus, "/Users/gordoncuster/Desktop/Git_projects/ASD/Results/treatment_indicators_taxonomy_ordered.csv")
+
+reversed_df <- tax_z_ps_baruta_time_merged_genus[nrow(tax_z_ps_baruta_time_merged_genus):1, ]
+write.csv(reversed_df, "/Users/gordoncuster/Desktop/Git_projects/ASD/Results/treatment_indicators_taxonomy_ordered_flipped.csv")
+
 otu_df <- data.frame(otu_table(z_ps_baruta_time_merged_genus))
 otu_df$trt_tp <- rownames(sample_data(z_ps_baruta_time_merged_genus))
 otu_df$tp <- str_split(otu_df$trt_tp, pattern = "_", simplify = T)[,2]
@@ -1537,9 +1579,95 @@ scale_fill_gradientn(colors = colors)+
        x = "Treatment",
        y = "ASV")+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/Treatment_indicators_heatmap.eps", device = "eps", width = 8, height = 6)
+#ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/Treatment_indicators_heatmap.eps", device = "eps", width = 8, height = 6)
 ```
 
+
+
+Boxplot of important Phyla - Firmicutes - Proteobacteria - Acidiobacteria
+
+```{r}
+#Create new column of phases
+sample_data(ps16S_bac_rarefy_iter)$phase <- as.factor(sample_data(ps16S_bac_rarefy_iter)$Timepoint)
+
+sample_data(ps16S_bac_rarefy_iter) <- data.frame(sample_data(ps16S_bac_rarefy_iter)) %>%
+  mutate(phase = case_when(
+    Timepoint == "t0" ~ "Phase I",
+    Timepoint %in% c("t1", "t2", "t3", "t4", "t5") ~ "Phase II",
+    Timepoint == "t6" ~ "Phase III"
+  ))
+
+sample_data(ps16S_bac_rarefy_iter)$phase <- as.factor(sample_data(ps16S_bac_rarefy_iter)$phase)
+
+physeq_phylum <- tax_glom(ps16S_bac_rarefy_iter, taxrank = "Phylum")
+
+#create phyla specific phylsoeq ojbects
+firmi <- subset_taxa(physeq_phylum, Phylum == "Firmicutes")
+proteo <- subset_taxa(physeq_phylum, Phylum == "Proteobacteria")
+acidio <- subset_taxa(physeq_phylum, Phylum == "Acidobacteria")
+
+
+# Melt phyloseq object to a data frame
+physeq_phylum_melted <- psmelt(firmi)
+
+# Create the boxplot
+ggplot(physeq_phylum_melted, aes(x = Phase, y = Abundance, fill = Phylum)) +
+  geom_boxplot() +
+  facet_wrap(~ Phylum, scales = "free") +  # Facet by Phylum
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Phylum-level Taxa Abundance by Phase",
+       x = "Phase",
+       y = "Abundance")  +theme_bw()
+
+
+
+physeq_phylum_melted <- psmelt(proteo)
+ggplot(physeq_phylum_melted, aes(x = Phase, y = Abundance, fill = Phylum)) +
+  geom_boxplot() +
+  facet_wrap(~ Phylum, scales = "free") +  # Facet by Phylum
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Phylum-level Taxa Abundance by Phase",
+       x = "Phase",
+       y = "Abundance")+theme_bw()
+
+
+physeq_phylum_melted <- psmelt(acidio)
+ggplot(physeq_phylum_melted, aes(x = Phase, y = Abundance, fill = Phylum)) +
+  geom_boxplot() +
+  facet_wrap(~ Phylum, scales = "free") +  # Facet by Phylum
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Phylum-level Taxa Abundance by Phase",
+       x = "Phase",
+       y = "Abundance")+theme_bw()
+```
+
+```{r}
+physeq_phylum <- tax_glom(ps16S_bac_rarefy_iter, taxrank = "Class")
+
+#create phyla specific phylsoeq ojbects
+bacilli <- subset_taxa(physeq_phylum, Class == "Bacilli")
+bacilli <- subset_taxa(physeq_phylum, Class == "Bacilli")
+
+alphap <- subset_taxa(physeq_phylum, Class == "Alphaproteobacteria")
+deltap <- subset_taxa(physeq_phylum, Class == "Bacilli")
+gammap <- subset_taxa(physeq_phylum, Class == "Gammaproteobacteria")
+
+bacilli <- subset_taxa(physeq_phylum, Class == "Bacilli")
+bacilli <- subset_taxa(physeq_phylum, Class == "Bacilli")
+
+# Melt phyloseq object to a data frame
+physeq_phylum_melted <- psmelt(bacilli)
+
+# Create the boxplot
+ggplot(physeq_phylum_melted, aes(x = Phase, y = Abundance, fill = Class)) +
+  geom_boxplot() +
+  facet_wrap(~ Class, scales = "free") +  # Facet by Phylum
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Phylum-level Taxa Abundance by Phase",
+       x = "Phase",
+       y = "Abundance")  +theme_bw()
+
+```
 
 
 
