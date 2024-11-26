@@ -17,6 +17,18 @@ require(psych)
 load("~/Desktop/Git_projects/ASD/Data/ps_bac_rarefy_iter.RData")
 ```
 
+update metdata
+```{r}
+meta_w_eh <- read.csv("/Users/gordoncuster/Desktop/Git_projects/ASD/Data/ASD_MetaWEh.csv")
+rownames(meta_w_eh) <- meta_w_eh$sample.names
+md_w_eh<-sample_data(meta_w_eh)
+
+sample_names(ps16S_bac_rarefy_iter)
+sample_data(ps16S_bac_rarefy_iter) <- meta_w_eh
+
+sample_data(ps16S_bac_rarefy_iter)
+```
+
 
 ```{r}
 #create super long color vector
@@ -74,6 +86,8 @@ sample_data(ps16S_bac_rarefy_iter)$time <- as.numeric(values[match(sample_data(p
 
 ps16S_bac_rarefy_iter <- subset_samples(ps16S_bac_rarefy_iter, Treatment != "UTC")
 
+ps16S_bac_rarefy_iter_noT0 <- subset_samples(ps16S_bac_rarefy_iter, Timepoint != "t0")
+
 ```
 
 
@@ -92,13 +106,13 @@ ggplot(md) + geom_boxplot(aes(x = time, y = EC, color = Treatment, group = time)
 ggplot(md) + geom_boxplot(aes(x = time, y = EC, color = Treatment, group = time)) + facet_wrap("Treatment")
 
 #nitrate with regression
-ggplot(md) + geom_boxplot(aes(x = time, y = NitrateN, color = Treatment, group = time)) + geom_smooth( data = md, aes(x=time, y = NitrateN, group = "Treatment"), method = "lm", se = F) + facet_wrap("Treatment")
+#ggplot(md) + geom_boxplot(aes(x = time, y = NitrateN, color = Treatment, group = time)) + geom_smooth( data = md, aes(x=time, y = NitrateN, group = "Treatment"), method = "lm", se = F) + facet_wrap("Treatment")
 #without regression line
-ggplot(md) + geom_boxplot(aes(x = time, y = NitrateN, color = Treatment, group = time)) + facet_wrap("Treatment")
+#ggplot(md) + geom_boxplot(aes(x = time, y = NitrateN, color = Treatment, group = time)) + facet_wrap("Treatment")
 
-ggplot(md) + geom_boxplot(aes(x = time, y = AmmoniumN, color = Treatment, group = time)) + geom_smooth( data = md, aes(x=time, y = AmmoniumN, group = "Treatment"), method = "lm", se = F) + facet_wrap("Treatment")
+#ggplot(md) + geom_boxplot(aes(x = time, y = AmmoniumN, color = Treatment, group = time)) + geom_smooth( data = md, aes(x=time, y = AmmoniumN, group = "Treatment"), method = "lm", se = F) + facet_wrap("Treatment")
 #without regression line
-ggplot(md) + geom_boxplot(aes(x = time, y = AmmoniumN, color = Treatment, group = time)) + facet_wrap("Treatment")
+#ggplot(md) + geom_boxplot(aes(x = time, y = AmmoniumN, color = Treatment, group = time)) + facet_wrap("Treatment")
 ```
 
 aov of physiochemical 
@@ -154,7 +168,8 @@ md_sub <- md %>% filter(sample.names != "asd-t1-a-102-tr")
 md_sub <- md_sub %>% filter(sample.names != "asd-t3-a-301-asd")
 md_sub <- md_sub %>% filter(sample.names != "asd-t3-a-201-2sppb")
 md_sub <- md_sub %>% filter(sample.names != "asd-t1-a-103-cc")
-md_sub_n <- md_sub %>% filter(NitrateNperkgDrySoil > 0)
+#md_sub_n <- md_sub %>% filter(NitrateNperkgDrySoil > 0)
+md_sub_n <- md_sub %>% mutate(NitrateNperkgDrySoil = NitrateNperkgDrySoil + 0.00001)
 min(md_sub_n$NitrateNperkgDrySoil)
 
 #check residauls
@@ -175,6 +190,7 @@ print(res_aov)
 
       
 res_tukey <- md_sub_n %>% tukey_hsd(formula = log(NitrateNperkgDrySoil) ~ Covercrop + Timepoint + WheatM)
+
 print(res_tukey[res_tukey$p.adj<0.06,])
 
 
@@ -252,6 +268,58 @@ print(res_tukey[res_tukey$p.adj<0.06,])
 
 ```
 
+Aov of Eh and cumulative Eh
+
+```{r}
+md<-data.frame(sample_data(ps16S_bac_rarefy_iter_noT0 ))
+md$CumulativeEh
+
+mod <- aov(log(CumulativeEh+0.1) ~ Covercrop + Timepoint + WheatM, data = md)
+shapiro_test(mod$residuals)
+hist(mod$residuals)
+
+
+#xplore data
+boxplot(md$CumulativeEh ~ md$WheatM)
+boxplot(md$CumulativeEh ~ md$Covercrop)
+boxplot(md$CumulativeEh ~ md$Timepoint)
+
+
+res_aov <- md %>% anova_test(log(CumulativeEh+0.1) ~ Covercrop *  WheatM + Timepoint)
+print(res_aov)
+
+      
+res_tukey <- md %>% tukey_hsd(formula = log(CumulativeEh+0.1) ~ Covercrop + Timepoint + WheatM)
+print(res_tukey[res_tukey$p.adj<0.06,])
+```
+
+```{r}
+md<-data.frame(sample_data(ps16S_bac_rarefy_iter_noT0 ))
+md$AverageEh
+
+mod <- aov(AverageEh ~ Covercrop + Timepoint + WheatM, data = md)
+shapiro_test(mod$residuals)
+hist(mod$residuals)
+
+#normal enough
+
+#xplore data
+boxplot(md$AverageEh ~ md$WheatM)
+boxplot(md$AverageEh ~ md$Covercrop)
+boxplot(md$AverageEh ~ md$Timepoint)
+
+
+res_aov <- md %>% anova_test(AverageEh ~ Covercrop *  WheatM + Timepoint)
+print(res_aov)
+
+      
+res_tukey <- md %>% tukey_hsd(formula = AverageEh ~ Covercrop + Timepoint + WheatM)
+print(res_tukey[res_tukey$p.adj<0.06,])
+```
+
+
+
+
 Split by treatment
 ```{r}
 #just ran and swtiched the response variable instaed of recoding or loopoing. I'm being lazy and want to get this done.
@@ -291,13 +359,13 @@ print(res_tukey[res_tukey$p.adj<0.06,])
 
 calculate summary stats in table
 ```{r}
-md<-data.frame(sample_data(ps16S_bac_rarefy_iter))
+md<-data.frame(sample_data(ps16S_bac_rarefy_iter_noT0))
 
 #md %>% filter(Timepoint == "t0") %>%
  summ_phyico <- md %>%
   group_by(Timepoint, Treatment) %>%
  summarize(
-    across(c(pH, EC, NitrateNperkgDrySoil, NH4NperkgDrySoil), list(mean = ~ round(mean(.x, na.rm = TRUE), 3), sd = ~ round(sd(.x, na.rm = TRUE), 3)), .names = "{.col}_{.fn}")
+    across(c(pH, EC, NitrateNperkgDrySoil, NH4NperkgDrySoil, AverageEh, CumulativeEh), list(mean = ~ round(mean(.x, na.rm = TRUE), 3), sd = ~ round(sd(.x, na.rm = TRUE), 3)), .names = "{.col}_{.fn}")
   )
   
 
@@ -414,23 +482,31 @@ global
 
 ```{r}
 
-com_ord <- ordinate(ps16S_bac_rarefy_iter, method = "NMDS", distance = "bray", k = 3)
-ord_plot<-plot_ordination(ps16S_bac_rarefy_iter, ordination = com_ord, type = "samples", axes = 1:2, color = "Treatment", shape = "Timepoint")
+com_ord <- ordinate(ps16S_bac_rarefy_iter_noT0, method = "NMDS", distance = "bray", k = 3)
+ord_plot<-plot_ordination(ps16S_bac_rarefy_iter_noT0, ordination = com_ord, type = "samples", axes = 1:2, color = "Treatment", shape = "Timepoint")
 
 
 
 
 com_df_nmds<-data.frame(com_ord$points)
-com_df_nmds$pH <- sample_data(ps16S_bac_rarefy_iter)$pH
-com_df_nmds$EC <- sample_data(ps16S_bac_rarefy_iter)$EC
-com_df_nmds$NitrateN <- sample_data(ps16S_bac_rarefy_iter)$NitrateN
-com_df_nmds$timepoint <- sample_data(ps16S_bac_rarefy_iter)$Timepoint
-com_df_nmds$treatment<- sample_data(ps16S_bac_rarefy_iter)$Treatment
-com_df_nmds$covercrop <- sample_data(ps16S_bac_rarefy_iter)$Covercrop
-com_df_nmds$wheatm <- sample_data(ps16S_bac_rarefy_iter)$WheatM
-com_df_nmds$time <- sample_data(ps16S_bac_rarefy_iter)$time
+
+com_df_nmds$cumEh <- sample_data(ps16S_bac_rarefy_iter_noT0)$CumulativeEh
+com_df_nmds$avgEh <- sample_data(ps16S_bac_rarefy_iter_noT0)$AverageEh
+com_df_nmds$pH <- sample_data(ps16S_bac_rarefy_iter_noT0)$pH
+com_df_nmds$EC <- sample_data(ps16S_bac_rarefy_iter_noT0)$EC
+com_df_nmds$NitrateN <- sample_data(ps16S_bac_rarefy_iter_noT0)$NitrateN
+com_df_nmds$timepoint <- sample_data(ps16S_bac_rarefy_iter_noT0)$Timepoint
+com_df_nmds$treatment<- sample_data(ps16S_bac_rarefy_iter_noT0)$Treatment
+com_df_nmds$covercrop <- sample_data(ps16S_bac_rarefy_iter_noT0)$Covercrop
+com_df_nmds$wheatm <- sample_data(ps16S_bac_rarefy_iter_noT0)$WheatM
+com_df_nmds$time <- sample_data(ps16S_bac_rarefy_iter_noT0)$time
+
 #plot nmds 
 plot(com_df_nmds$MDS1 ~ com_df_nmds$pH)
+
+#no clear trends in ordination axes along Eh
+plot(com_df_nmds$MDS1 ~ com_df_nmds$cumEh)
+plot(com_df_nmds$MDS2 ~ com_df_nmds$cumEh)
 
 com_df_nmds$treatment <- factor(com_df_nmds$treatment, levels = c("F+W", "F+WM", "CC", "CC+WM", "Tr", "Tr+WM", "2spp", "2spp+WM"), ordered = T)
 
@@ -450,7 +526,7 @@ ggplot(com_df_nmds, aes(x = MDS1, y = pH)) +
   labs(x = "MDS1", y = "pH", alpha = "pH", color = "Treatment", shape = "Timepoint") +
   ggtitle("Regression of pH vs. MDS1")  # Add title
 
-ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/ph_X_MDS1.eps", device = "eps", width = 8, height = 6)
+#ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/ph_X_MDS1.eps", device = "eps", width = 8, height = 6)
 
 ```
 
@@ -472,11 +548,13 @@ centroids_trt <- merge(centroids_trt, se_trt, by="treatment")
 centroids_trt_tp <- merge(centroids_trt_tp, se_trt_tp) 
 
 
-
+#supp figure 4
 #TRT AND TP
 ggplot(com_df_nmds, aes(MDS1, MDS2, color = as.factor(treatment), shape = timepoint)) +
   geom_point(size=1) + geom_point(data=centroids_trt_tp,size=7, aes(shape = timepoint))+ 
   scale_shape_manual(values = 1:nlevels(centroids_trt_tp$timepoint)) + theme_bw() + ylim(-1,1)
+
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/Treatment_Timepoint_Ord.eps", device = "eps", width = 8, height = 6)
 
 #TRT
 ggplot(com_df_nmds, aes(MDS1,MDS2, color = as.factor(treatment))) +
@@ -484,19 +562,46 @@ ggplot(com_df_nmds, aes(MDS1,MDS2, color = as.factor(treatment))) +
   geom_errorbar(data=centroids_trt,aes(ymin=MDS2-se.y,ymax=MDS2+se.y),width=0.1)+
   geom_errorbarh(data=centroids_trt,aes(xmin=MDS1-se.x,xmax=MDS1+se.x),height=0.1)
 
-ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/Treatment_Ord.eps", device = "eps", width = 8, height = 6)
+#ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/Treatment_Ord.eps", device = "eps", width = 8, height = 6)
 
 ```
 
 ```{r}
 
-
-
-
 sample_data(ps16S_bac_rarefy_iter)$Treatment<- factor(sample_data(ps16S_bac_rarefy_iter)$Treatment, levels = c("F+W", "F+WM", "CC", "CC+WM", "Tr", "Tr+WM", "2spp", "2spp+WM"), ordered = T)
 ord_plot + theme_bw() + 
   scale_shape_manual(values = 1:nlevels(sample_data(ps16S_bac_rarefy_iter)$Timepoint)) 
 
+
+#axis 1 with cum EH
+summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$cumEh))
+hist(residuals(lm(com_df_nmds$MDS1 ~ com_df_nmds$cumEh)))
+#looks normal enough, but just in case heres a non-parametric regression
+summary(lm(MDS1 ~ cumEh, data = com_df_nmds))
+#summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH, dataframe = com_df_nmds))
+
+#axis 2 with cum EH
+summary(lm(com_df_nmds$MDS2 ~ com_df_nmds$cumEh))
+hist(residuals(lm(com_df_nmds$MDS2 ~ com_df_nmds$cumEh)))
+#looks normal enough, but just in case heres a non-parametric regression
+summary(lm(MDS2 ~ cumEh, data = com_df_nmds))
+#summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH, dataframe = com_df_nmds))
+
+
+
+#axis 1 with avg eh
+summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$avgEh))
+hist(residuals(lm(com_df_nmds$MDS1 ~ com_df_nmds$avgEh)))
+#looks normal enough, but just in case heres a non-parametric regression
+summary(lm(MDS1 ~ avgEh, data = com_df_nmds))
+#summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH, dataframe = com_df_nmds))
+
+#axis 2 with avg eh
+summary(lm(com_df_nmds$MDS2 ~ com_df_nmds$avgEh))
+hist(residuals(lm(com_df_nmds$MDS2 ~ com_df_nmds$avgEh)))
+#looks normal enough, but just in case heres a non-parametric regression
+summary(lm(MDS2 ~ avgEh, data = com_df_nmds))
+#summary(lm(com_df_nmds$MDS1 ~ com_df_nmds$pH, dataframe = com_df_nmds))
 
 
 
@@ -540,9 +645,13 @@ ps_adonis<-function(physeq){
        physeq_dist<-parallelDist::parDist(as.matrix(t(otu_tab)), method = "bray")}
             else{physeq_dist<-parallelDist::parDist(as.matrix(otu_tab), method = "bray")}
   print(anova(vegan::betadisper(physeq_dist, md_tab$Treatment)))
-  vegan::adonis2(physeq_dist ~  Covercrop + WheatM + Timepoint + pH + EC + NitrateNperkgDrySoil + NH4NperkgDrySoil, data = md_tab, permutations = 100)
+  vegan::adonis2(physeq_dist ~  Covercrop + WheatM + Timepoint + CumulativeEh + AverageEh + pH + EC + NitrateNperkgDrySoil + NH4NperkgDrySoil , data = md_tab, permutations = 100)
+   vegan::adonis2(physeq_dist ~  Covercrop + WheatM + Timepoint +  pH + EC + CumulativeEh + AverageEh + NitrateNperkgDrySoil + NH4NperkgDrySoil , data = md_tab, permutations = 100)
 }
-ps_adonis(ps16S_bac_rarefy_iter)
+ps_adonis(ps16S_bac_rarefy_iter_noT0)
+
+
+
 
 
 ps_pairwiseadonis<-function(physeq){
@@ -562,10 +671,10 @@ ps_pairwiseadonis(ps16S_bac_rarefy_iter)
 
 
 ```
-split by timepoint
 
 
 
+#split by timepoint
 day 0
 ```{r}
 #com_ord <- ordinate(subset_samples(ps16S_bac_rarefy_iter, Timepoint == "t0"), method = "NMDS", distance = "bray", k = 3)
@@ -1211,7 +1320,7 @@ dist_bt_groups_filtered_2_matched$WheatM <- ifelse(dist_bt_groups_filtered_2_mat
 mod_distbtpts<-aov(Distance ~ Treatment * WheatM + Label, data = dist_bt_groups_filtered_2_matched)
 #no difference
 summary(mod_distbtpts)
-hist(mod$residuals)
+hist(mod_distbtpts$residuals)
 TukeyHSD(mod_distbtpts, "Treatment")
 plot(TukeyHSD(mod_distbtpts, "Treatment"))
 
@@ -1219,9 +1328,15 @@ TukeyHSD(mod_distbtpts, "WheatM")
 plot(TukeyHSD(mod_distbtpts, "WheatM"))
 
 
-ggplot(data = dist_bt_groups_filtered_2_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + facet_wrap(~Trt1) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  + geom_smooth(data = dist_bt_groups_filtered_2_matched, aes(x = Label, y = Distance, group=Trt1,),  se= T, method = "loess")
+dist_bt_groups_filtered_2_matched$Trt1 <- factor(dist_bt_groups_filtered_2_matched$Trt1, levels = c("F+W", "F+WM", "CC", "CC+WM", "Tr", "Tr+WM", "2spp", "2spp+WM"), ordered = T)
 
+#supp figure 9
+ggplot(data = dist_bt_groups_filtered_2_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + facet_wrap(~Trt1) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  + geom_smooth(data = dist_bt_groups_filtered_2_matched, aes(x = Label, y = Distance, group=Trt1,),  se= T, method = "loess")
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/suppFigure9.eps", device = "eps", width = 10, height = 8)
+
+#Supp figure 8
 ggplot(data = dist_bt_groups_filtered_2_matched) + geom_boxplot(mapping = aes(x = Trt1, y = Distance, fill = Trt1)) + facet_wrap(~Label) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/suppFigure8.eps", device = "eps", width = 10, height = 8)
 
 ```
 
@@ -1313,7 +1428,12 @@ summary(mod_distto_t6)
 plot(TukeyHSD(mod_distto_t6, "Treatment"))
 plot(TukeyHSD(mod_distto_t6, "WheatM"))
 
+dist_bt_groups_filtered_3_matched$Trt1 <- factor(dist_bt_groups_filtered_3_matched$Trt1, levels = c("F+W", "F+WM", "CC", "CC+WM", "Tr", "Tr+WM", "2spp", "2spp+WM"), ordered = T)
+#supp figure 10
+
 ggplot(data = dist_bt_groups_filtered_3_matched) + geom_boxplot(mapping = aes(x = Label, y = Distance, fill = Trt1)) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  
+
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/suppFigure10.eps", device = "eps", width = 10, height = 8)
 
 ```
 

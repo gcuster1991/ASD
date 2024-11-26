@@ -5,6 +5,8 @@ output: html_notebook
 
 ```{r}
 #ordinate 
+sample_data(ps16S_bac_rarefy_iter)$Treatment <- factor(sample_data(ps16S_bac_rarefy_iter)$Treatment, levels = c("F+W", "F+WM", "CC", "CC+WM", "Tr", "Tr+WM", "2spp", "2spp+WM"), ordered = T)
+
 ord <- phyloseq::ordinate(ps16S_bac_rarefy_iter, method = "NMDS", distance = "bray", k =3)
 #plot ordiantion
 phyloseq::plot_ordination(physeq = ps16S_bac_rarefy_iter, ordination = ord) + facet_wrap(~ Timepoint, scales = "free") + geom_point(aes(color = Treatment)) +  theme_bw()  
@@ -18,15 +20,20 @@ allGroupsColors<- c("grey0", "gray12", "grey24", "grey36", "grey48", "grey60", "
 
 allGroupsColors<- c("#084594", "#2171b5", "#4292c6", "#6baed6", "#9ecae1", "#c6dbef", "#deebf7", "#f7fbff")
 
+#supp figure 6
 ord <- phyloseq::ordinate(ps16S_bac_rarefy_iter, method = "CAP", formula = ~Timepoint + Treatment)
 phyloseq::plot_ordination(physeq = ps16S_bac_rarefy_iter, ordination = ord, color = "Timepoint") + facet_wrap(~ Treatment, scales = "free", nrow = 2, ncol = 4)  +    theme_bw()  +   scale_color_manual(values = rev(allGroupsColors))
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/Treatment_timepointFaceted.eps", device = "eps", width = 10, height = 6)
 
+#supp figure 5
 phyloseq::plot_ordination(physeq = ps16S_bac_rarefy_iter, ordination = ord, color = "Treatment") + facet_wrap(~ Timepoint, scales = "free", nrow = 2, ncol = 4)  +    theme_bw() 
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/TimepointFacetedOrd.eps", device = "eps", width = 10, height = 6)
+
+```
 
 
-
-
-
+```{r}
+ord <- phyloseq::ordinate(ps16S_bac_rarefy_iter, method = "NMDS", distance = "bray", k =3)
 #extract axis scores 
 scrs<-vegan::scores(ord)$sites
 #add metadata columsn 
@@ -98,7 +105,7 @@ ggplot(cent_sorted,
       )
    )
 
-ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/temporal_tracking_centroids.esp", device = "eps", width = 8, height = 6)
+#ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/temporal_tracking_centroids.esp", device = "eps", width = 8, height = 6)
 
 ggplot(joined_Df, 
        aes(
@@ -110,7 +117,7 @@ ggplot(joined_Df,
    #facet_wrap(~Treatment, scales = "fixed") +
    geom_path(aes(group = "all",), color = "grey") +
    geom_point(aes(size=group_dispersion)) +
-    geom_point(aes(x = NMDS1, y = NMDS2, shape = Timepoint.x), alpha = 0.5) + 
+    geom_point(aes(x = NMDS1, y = NMDS2, shape = Timepoint.x)) + 
   scale_shape_manual(values=1:nlevels(joined_Df$Timepoint.x)) +
     # geom_text(size = 5, color ="Black", aes(label = Timepoint), position = position_nudge(x = 0.01, y = 0.01)) + 
   geom_text(size = 5, color ="grey60", aes(label = Timepoint.x)) + 
@@ -127,7 +134,7 @@ ggplot(joined_Df,
       )
    )
 
-
+ggsave("/Users/gordoncuster/Desktop/Git_projects/ASD/Results/Images/temporalTracikingWithIndividualdots.eps", device = "eps", width = 10, height = 8)
 
 
 
